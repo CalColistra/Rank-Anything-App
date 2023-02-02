@@ -59,7 +59,7 @@ form.addEventListener('submit', async e => {
   if(auth.currentUser){  //check if user is logged in
       await setDoc(docRef, { todoContent: input.value } )
     }else{
-      h3.textContent = 'please log in'
+      h3.textContent = 'Please log in'
     }
 })
 
