@@ -1,0 +1,8 @@
+to run local host for development:
+    npm run dev
+to deploy changes:
+    npm run build
+    firebase deploy
+
+URL: https://rank-anything-app.web.app/
+    and https://rank-anything-app.firebaseapp.com/
