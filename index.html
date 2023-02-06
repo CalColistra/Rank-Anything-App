@@ -3,40 +3,112 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="description" content="Rank Anything App">
     <meta name="author" content="Cal Colistra">
     <link rel="icon" type="image" href="img/R_icon.jpg">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <title>Rank-Anything-App</title>
 
   </head>
   <body>
-    <div id="app">
 
-      <nav>
+<!-- Nav bar -->
+    <div id="nav" class="container-fluid">
+      <div id="top">
 
-        <button class='login show'>
-          <img src="img/googleLogo.png" alt="">
-          <span>Sign in with Google</span>
-        </button>
+        <div id="topLeft">
+          <p  class="username show"></p>
+          <button class='login show' id="googleBtn">
+            <img src="img/googleLogo.png" alt="">
+            Sign in with Google
+          </button>
 
-        <button class="logout">
-          Log out
-        </button>
-        <p id = 'username'></p>
+          <button class="logout hide" id="googleBtn">
+            Log out
+          </button>
+        </div>
 
-      </nav>
+        <div id="topMiddle">
 
-      <form>
-        <h3></h3>
-        <input type="text">
-      </form>
+          <button id="homeBtn" >
+            <img id="icon" src="img/homeIcon.png" alt="">
+            <p class="navLabel" id="homeLabel">Home</p>
+          </button>
 
-      <section>
+          <button id="discoverBtn">
+            <img id="icon" src="img/discoverIcon.png" alt="">
+            <p class="navLabel" id="discoverLabel">Discover</p>
+          </button>
+          
+          <button id="searchBtn">
+            <img id="icon" src="img/searchIcon.png" alt="">
+            <p class="navLabel" id="searchLabel">Search</p>
+          </button>
+
+          <button id="profileBtn">
+            <img id="icon" src="img/profileIcon.png" alt="">
+            <p class="navLabel" id="profileLabel">Profile</p>
+          </button>
+
+        </div>
         
-      </section>
+      </div>
+    </div>
+<!-- END Nav bar -->
+
+    <div id="app" class="container-fluid">
+
+      <div class="section" id="home">
+        
+        <div class="jumbotron text-center" style="margin-bottom:0">
+          <h1>Home Page</h1>
+        </div>
+
+        <form>
+          <h3></h3>
+          <input type="text">
+        </form>
+  
+        <section>
+          
+        </section>
+
+      </div>
+
+    <div class="section" id="discover">
+      <div class="jumbotron text-center" style="margin-bottom:0">
+        <h1>Discover</h1>
+      </div>
       
     </div>
+     
+    <div class="section" id="search">
+      <div class="jumbotron text-center" style="margin-bottom:0">
+        <h1>Search</h1>
+      </div>
+      
+    </div>
+
+    <div class="section" id="profile">
+      <div class="jumbotron text-center" style="margin-bottom:0" id="profileTitle"></div>
+      <div class="profileDisplay">
+        <div class="profileLabel">Display Name:</div>
+        <div class="profileLabel">Followers:</div>
+        <div class="profileLabel">Following:</div>
+        <div class="profileLabel">Reputation:</div>
+        <div id="profileName"></div>
+        <div id="profileFollowing"></div>
+        <div id="profileFollowers"></div>
+        <div id="profileReputation"></div>
+      </div>
+    </div>
+
+
+      
+      
+    </div>
+
     <script type="module" src="./main.js"></script>
   </body>
 </html>
