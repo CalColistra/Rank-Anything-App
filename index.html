@@ -38,12 +38,17 @@
 
           <button id="discoverBtn">
             <img id="icon" src="img/discoverIcon.png" alt="">
-            <p class="navLabel" id="discoverLabel">Discover</p>
+            <p class="navLabel" id="discoverLabel">Explore</p>
           </button>
           
           <button id="searchBtn">
             <img id="icon" src="img/searchIcon.png" alt="">
             <p class="navLabel" id="searchLabel">Search</p>
+          </button>
+
+          <button id="rankBtn">
+            <img id="icon" src="img/editIcon.png" alt="">
+            <p class="navLabel" id="rankLabel">Post</p>
           </button>
 
           <button id="profileBtn">
@@ -65,20 +70,11 @@
           <h1>Home Page</h1>
         </div>
 
-        <form>
-          <h3></h3>
-          <input type="text">
-        </form>
-  
-        <section>
-          
-        </section>
-
       </div>
 
     <div class="section" id="discover">
       <div class="jumbotron text-center" style="margin-bottom:0">
-        <h1>Discover</h1>
+        <h1>Explore</h1>
       </div>
       
     </div>
@@ -90,18 +86,44 @@
       
     </div>
 
+    <div class="section" id="rank">
+
+      <div class="jumbotron text-center" style="margin-bottom:0">
+        <h1>Post</h1>
+      </div>
+      <form id="postForm">
+        ello
+      </form>
+    </div>
+
     <div class="section" id="profile">
       <div class="jumbotron text-center" style="margin-bottom:0" id="profileTitle"></div>
       <div class="profileDisplay">
-        <div class="profileLabel">Display Name:</div>
+        <div class="profileLabel">Username:</div>
+        <div class="profileLabel">Posts:</div>
         <div class="profileLabel">Followers:</div>
         <div class="profileLabel">Following:</div>
         <div class="profileLabel">Reputation:</div>
-        <div id="profileName"></div>
+        <div id="profileName">
+          <div id = "displayUsername"></div> 
+          <button id='editName' class='smallEditBtn'><img id='editIcon' src='img/editIcon.png'>Edit</button>
+          <div id="editNameForm"></div>
+        </div>
+ 
+          
+
+        <div id="postCount"></div>
         <div id="profileFollowing"></div>
         <div id="profileFollowers"></div>
         <div id="profileReputation"></div>
       </div>
+      
+      <div class="jumbotron text-center" style="margin-bottom:0" id="profileTitle">Top Posts</div>
+      
+      <div id="profilePosts"> 
+        
+      </div>
+
     </div>
 
 

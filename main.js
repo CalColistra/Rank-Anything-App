@@ -3,19 +3,21 @@ import './style.css'
 import { app as firebase } from './javaScript/firebase-config'
 
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, setDoc, doc, getDoc, collection, onSnapshot } from 'firebase/firestore'
+import { getFirestore, setDoc, doc, getDoc, updateDoc, collection, onSnapshot } from 'firebase/firestore'
 
 //---------------------------------------------------------------------------------
 var signedIn = false;
+const db = getFirestore(firebase)
 //---------------------------------------------------------------------------------
 //user class
 class User {
-  constructor(userEmail, userName, followers, following, reputation) {
+  constructor(userEmail, userName, followers, following, reputation, postCount) {
     this.userEmail = userEmail;
     this.userName = userName;
     this.followers = followers;
     this.following = following;
     this.reputation = reputation;
+    this.postCount = postCount;
   }
 }
 //---------------------------------------------------------------------------------
@@ -34,34 +36,33 @@ loginBtn.addEventListener('click', () => {
 })
 
 logoutBtn.addEventListener('click', () => {
+  displayHomeSection();
+  currentUser = null;
   signOut(auth).then(() => {
       logoutBtn.classList.remove('show');
       logoutBtn.classList.add('hide');
       loginBtn.classList.remove('hide');
       loginBtn.classList.add('show');
-      console.log('logged out')
+      console.log('logged out');
   })
 })
 var currentUser;
-let username;
 onAuthStateChanged(auth, user => {
   if(user){
       loginBtn.classList.remove('show');
       loginBtn.classList.add('hide');
       logoutBtn.classList.remove('hide');
       logoutBtn.classList.add('show');
-      document.querySelector('h3').innerHTML = '';
-      username = user.displayName;
-      displayUser.innerHTML = 'Signed in as: ' + username;
+      checkAccount(user.email);
+      signedIn = true;
       displayUser.classList.remove('hide');
       displayUser.classList.add('show');
-      currentUser = new User(user.email, username);
-      checkAccount(currentUser.userEmail);
-      signedIn = true;
+      
   }else{
       logoutBtn.classList.remove('show');
       loginBtn.classList.add('show');
       displayUser.textContent = 'You are not signed in';
+      currentUser = null;
       signedIn = false;
   }
 })
@@ -73,18 +74,21 @@ async function checkAccount(email){
 
 if (docSnap.exists()) {
   console.log("Returning User:", docSnap.data());
-  currentUser = new User(email,docSnap.data().userName, docSnap.data().followers, docSnap.data().following, docSnap.data().reputation);
+  currentUser = new User(email,docSnap.data().userName, docSnap.data().followers, docSnap.data().following, docSnap.data().reputation, docSnap.data().postCount);
 } else {
-  // doc.data() will be undefined in this case
-  console.log("New user!");
-  await setDoc(doc(db, "users", email), {
-    userName: currentUser.userName,
-    email: email,
-    followers: [],
-    following: [],
-    reputation: 0
-  });
-}
+    // doc.data() will be undefined in this case
+    console.log("New user!");
+    await setDoc(doc(db, "users", email), {
+      userName: currentUser.userName,
+      email: email,
+      followers: [],
+      following: [],
+      reputation: 0,
+      postCount:0
+    });
+    currentUser = new User(email,docSnap.data().userName, docSnap.data().followers, docSnap.data().following, docSnap.data().reputation, docSnap.data().postCount);
+  }
+  displayUser.innerHTML = 'Signed in as: ' + currentUser.userName;
 }
 //---------------------------------------------------------------------------------
 //handle nav bar buttons:
@@ -100,6 +104,10 @@ const searchBtn = document.querySelector('#searchBtn');
 const searchSection = document.querySelector('#search');
 const searchLabel = document.querySelector('#searchLabel');
 
+const rankBtn = document.querySelector('#rankBtn');
+const rankSection = document.querySelector('#rank');
+const rankLabel = document.querySelector('#rankLabel');
+
 const profileBtn = document.querySelector('#profileBtn');
 const profileSection = document.querySelector('#profile');
 const profileLabel = document.querySelector('#profileLabel');
@@ -107,10 +115,33 @@ const profileLabel = document.querySelector('#profileLabel');
 const sections = document.getElementsByClassName('section');
 const navLabels = document.getElementsByClassName('navLabel');
 
+//-----------------------------------------------------------------------------------------------------------
+//home section:
 homeSection.style.display="block";
 homeLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
 
+async function displayHomeSection(){
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].style.display = 'none';
+  }
+  for (var i = 0; i < navLabels.length; i++) {
+    navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
+  }
+  homeSection.style.display="block";
+  homeLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+}
+
 homeBtn.addEventListener('click', () => {
+  if (signedIn==false) {
+    alert("Please sign in with google.");
+  }
+  else {
+    displayHomeSection();
+  }
+})
+//-----------------------------------------------------------------------------------------------------------
+//post section:
+rankBtn.addEventListener('click', () => {
   if (signedIn==false) {
     alert("Please sign in with google.");
   }
@@ -121,11 +152,13 @@ homeBtn.addEventListener('click', () => {
     for (var i = 0; i < navLabels.length; i++) {
       navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
     }
-    homeSection.style.display="block";
-    homeLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+    rankSection.style.display="block";
+    rankLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
   }
 })
 
+//-----------------------------------------------------------------------------------------------------------
+//explore section:
 discoverBtn.addEventListener('click', () => {
   if (signedIn==false) {
     alert("Please sign in with google.");
@@ -141,7 +174,8 @@ discoverBtn.addEventListener('click', () => {
     discoverLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
   }
 })
-
+//-----------------------------------------------------------------------------------------------------------
+//Search section:
 searchBtn.addEventListener('click', () => {
   if (signedIn==false) {
     alert("Please sign in with google.");
@@ -158,11 +192,17 @@ searchBtn.addEventListener('click', () => {
   }
 })
 
-const profileName = document.querySelector("#profileName");
+//-----------------------------------------------------------------------------------------------------------
+//Profile section:
+const displayUsername = document.querySelector("#displayUsername");
+const editNameForm = document.querySelector("#editNameForm");
 const profileFollowing = document.querySelector("#profileFollowing");
 const profileFollowers = document.querySelector("#profileFollowers");
 const profileReputation = document.querySelector("#profileReputation");
 const profileTitle = document.querySelector("#profileTitle");
+const postCount = document.querySelector("#postCount");
+
+
 
 profileBtn.addEventListener('click', () => {
   if (signedIn==false) {
@@ -175,47 +215,53 @@ profileBtn.addEventListener('click', () => {
     for (var i = 0; i < navLabels.length; i++) {
       navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
     }
-    profileSection.style.display="block";
-    profileTitle.innerHTML = "<h1>Your Profile</h1>";
-    profileLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-    profileName.innerHTML = "<h2>"+currentUser.userName+"</h2>";
-    profileFollowers.innerHTML = "<h2>"+currentUser.followers.length+"</h2>";
-    profileFollowing.innerHTML = "<h2>"+currentUser.following.length+"</h2>";
-    profileReputation.innerHTML = "<h2>"+currentUser.reputation+"</h2>";
+    displayProfileSection();
   }
 })
 
+async function displayProfileSection() {
+    editNameForm.innerHTML ="";
+    profileSection.style.display="block";
+    profileTitle.innerHTML = "<h1>Your Profile</h1>";
+    profileLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+    displayUsername.innerHTML = "<h2>"+currentUser.userName+"</h2>";
+    profileFollowers.innerHTML = "<h2>"+currentUser.followers.length+"</h2>";
+    profileFollowing.innerHTML = "<h2>"+currentUser.following.length+"</h2>";
+    profileReputation.innerHTML = "<h2>"+currentUser.reputation+"</h2>";
+    postCount.innerHTML = "<h2>"+currentUser.postCount+"</h2>";
+
+    const editNameBtn = document.querySelector("#editName");
+    editNameBtn.style.display="inline";
+    const submitNameBtn = "&nbsp; <button id='submitButton' class='smallEditBtn'><input value='Submit' type='submit'></button>";
+    
+    editNameBtn.addEventListener('click', () => {
+      editNameBtn.style.display="none";
+      editNameForm.innerHTML = "<form id='newNameForm'> <label>Enter your new username:</label>  <input id='newNameInput' type='text'>"+submitNameBtn +"</form>";
+      const newNameForm = document.querySelector("#newNameForm");
+      const newNameInput = document.querySelector("#newNameInput");
+      
+      newNameForm.addEventListener('submit', async e =>{
+        var newName = newNameInput.value;
+        if (newName =='') {
+          alert("Please don't submit an empty username");
+        }
+        else if(newName.length>16) {
+          alert("Usernames must be less than 17 characters.");
+        }
+        else{
+          editNameForm.innerHTML="";
+          currentUser.userName=newName;
+          e.preventDefault();
+          await updateDoc(doc(db,"users", currentUser.userEmail), {
+            userName: newName
+          });
+          displayUser.innerHTML = 'Signed in as: ' + currentUser.userName;
+          displayProfileSection();
+        }
+      })
+    })
+}
 //---------------------------------------------------------------------------------
-// firestore section
 
-const db = getFirestore(firebase)
 
-const colRef = collection(db, 'todos')
 
-const form = document.querySelector('form')
-const input = document.querySelector('input')
-const h3 = document.querySelector('h3')
-
-//function that triggers when user hits submit in text box:
-form.addEventListener('submit', async e => {
-  e.preventDefault()
-  
-  const docRef = doc(colRef)
-
-  if(auth.currentUser){  //check if user is logged in
-      await setDoc(docRef, { todoContent: input.value } )
-    }else{
-      h3.textContent = 'Please log in'
-    }
-})
-
-onSnapshot(colRef, col => {
-
-  section.innerHTML = ''
-
-  col.forEach(doc => {
-      section.innerHTML += `<div>
-          <p id='listWords'>${doc.data().todoContent}</p>
-      </div>`
-  });
-})

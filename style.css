@@ -82,7 +82,7 @@ button:active {
   border-radius: 8px;
   display: grid;
   width: 100%;
-  grid-template-columns: 25% 25% 25% 25%;
+  grid-template-columns: 20% 20% 20% 20% 20%;
 }
 .navLabel{
   margin: 0;
@@ -98,23 +98,48 @@ section{
 
 .profileDisplay{
   display:grid;
-  grid-template-columns: 36% 21.3% 21.3% 21.3%;
+  grid-template-columns: 36% 16% 16% 16% 16%;
   background-color: #ffffff;
   border-color: #282828;
   border-width: 3px;
   border-style: solid;
 }
 .profileLabel{
+  font-size: 1.2vw;
+}
+#profilePosts{
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 30%;
+}
+.smallEditBtn{
+  display: inline;
+  width: max-content;
+  font-size: 1vw;
+}
+#editIcon{
+  width: 15px;
+}
+#newNameInput{
+  background-color:#e6e6e6;
+  border: #282828;
+  border-style: solid;
+  padding: 2px;
+}
+#displayUsername{
+  display: inline-block;
+}
+#editNameForm{
+  margin-bottom: 5px;
+}
+input[type=submit]{
+  background-color: transparent;
+  font-weight: bold;
   font-size: 1.5vw;
 }
 
-form{
-  margin: 1rem 0;
-}
 
 input{
-  min-width: 16rem;
-  width: 80%;
   height: 2rem;
   border-radius:10px;
   border: none;
