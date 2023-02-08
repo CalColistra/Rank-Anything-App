@@ -3,7 +3,7 @@ import './style.css'
 import { app as firebase } from './javaScript/firebase-config'
 
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, setDoc, doc, getDoc, updateDoc, collection, onSnapshot } from 'firebase/firestore'
+import { getFirestore, setDoc, doc, getDoc, getDocs, updateDoc, collection, query, where} from 'firebase/firestore'
 
 //---------------------------------------------------------------------------------
 var signedIn = false;
@@ -146,16 +146,64 @@ rankBtn.addEventListener('click', () => {
     alert("Please sign in with google.");
   }
   else {
-    for (var i = 0; i < sections.length; i++) {
-      sections[i].style.display = 'none';
-    }
-    for (var i = 0; i < navLabels.length; i++) {
-      navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
-    }
-    rankSection.style.display="block";
-    rankLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+    displayPostSection();
+    const postSearchBarForm = document.querySelector("#searchBarContainer");
+    const searchResults = document.querySelector("#searchResults");
+    const searchBarInput = document.querySelector("#searchBar");
+    postSearchBarForm.addEventListener('submit', async e =>{
+      e.preventDefault();
+      var searchInputValue = searchBarInput.value;
+      const q = query(collection(db,"objects"), where("tags", "array-contains", searchInputValue));
+      const querySnapshot = await getDocs(q);
+      var matchingResults = [];
+      var matchingIds = [];
+      querySnapshot.forEach((doc) => {
+        // doc.data() is never undefined for query doc snapshots
+        //console.log(doc.id, " => ", doc.data());
+        matchingResults.push(doc.data());
+        matchingIds.push(doc.id);
+      });
+      console.log(matchingResults);
+      let resultsList = "";
+      for (let i=0; i < matchingResults.length; i++) {
+        resultsList += "<div><button id = '"+ matchingIds[i]+"' class = 'resultObject'><strong>";
+        resultsList += matchingResults[i].name + "</strong></br>"+matchingResults[i].creator;
+        resultsList += "</button><div/>";
+      }
+      searchResults.innerHTML = resultsList;
+      addListenersPost(matchingIds,matchingResults);
+    })
   }
+  
 })
+
+async function addListenersPost(matchingIds, matchingResults) {
+  for (let i=0; i < matchingIds.length; i++) {
+    var currentId = "#" + matchingIds[i];
+    //console.log(currentId);
+
+    var currentResult = document.querySelector(currentId);
+    //console.log(currentResult);
+    const postForm = document.querySelector("#postForm");
+    currentResult.addEventListener('click', () => {
+      var postFormString = "<strong>"+matchingResults[i].name;
+      postFormString += "</strong>";
+      postForm.innerHTML = postFormString;
+    })
+  }
+}
+
+
+async function displayPostSection(){
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].style.display = 'none';
+  }
+  for (var i = 0; i < navLabels.length; i++) {
+    navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
+  }
+  rankSection.style.display="block";
+  rankLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+}
 
 //-----------------------------------------------------------------------------------------------------------
 //explore section:
@@ -239,7 +287,7 @@ async function displayProfileSection() {
       editNameForm.innerHTML = "<form id='newNameForm'> <label>Enter your new username:</label>  <input id='newNameInput' type='text'>"+submitNameBtn +"</form>";
       const newNameForm = document.querySelector("#newNameForm");
       const newNameInput = document.querySelector("#newNameInput");
-      
+
       newNameForm.addEventListener('submit', async e =>{
         var newName = newNameInput.value;
         if (newName =='') {
@@ -249,9 +297,9 @@ async function displayProfileSection() {
           alert("Usernames must be less than 17 characters.");
         }
         else{
+          e.preventDefault();
           editNameForm.innerHTML="";
           currentUser.userName=newName;
-          e.preventDefault();
           await updateDoc(doc(db,"users", currentUser.userEmail), {
             userName: newName
           });

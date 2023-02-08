@@ -116,6 +116,7 @@ section{
   display: inline;
   width: max-content;
   font-size: 1vw;
+  margin: 0;
 }
 #editIcon{
   width: 15px;
@@ -138,6 +139,49 @@ input[type=submit]{
   font-size: 1.5vw;
 }
 
+#rankContainer{
+  display: grid;
+  grid-template-columns: 38% 62%;
+  grid-template-rows: 100%;
+  background-color: #ffffff;
+  border-width: 2%;
+  border-style: solid;
+  border-top: transparent;
+}
+#leftSearch{
+border-right-style: solid;
+}
+
+#postForm{
+  background-color: antiquewhite;
+  display: grid;
+  grid-template-columns: 100%;
+  border-top-style: solid;
+}
+#rankSearchTitle{
+  background-color: rgb(255, 244, 205);
+  padding-bottom: .3vh;
+}
+#searchBarContainer{
+  max-height: 35px;
+  display:grid;
+  grid-template-columns: 82% 18%;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+searchBar{
+  height: 100%;
+}
+#searchIcon{
+  max-height: 20px;
+  max-width: 20px;
+  padding: auto;
+}
+#searchButton{
+  height: 100%;
+  width: 100%;
+}
 
 input{
   height: 2rem;
@@ -146,6 +190,16 @@ input{
   outline: none;
   text-align: center;
   color: #282828;
+}
+
+#searchResults{
+  display: grid;
+  grid-template-columns: 100%;
+}
+.resultObject{
+  width: 100%;
+  background-color: #ebf6a058;
+  border-bottom: 0;
 }
 
 #listWords{
