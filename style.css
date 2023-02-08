@@ -153,10 +153,25 @@ border-right-style: solid;
 }
 
 #postForm{
-  background-color: antiquewhite;
+  background-color: rgba(255, 244, 229, 0.682);
   display: grid;
   grid-template-columns: 100%;
   border-top-style: solid;
+}
+#scaleInput{
+  display: grid;
+  grid-template-columns: 40% 45% 15%;
+}
+#textArea{
+  width: 100%;
+}
+#postText{
+  display: grid;
+  grid-template-columns: 40% 60%;
+}
+#publishPost{
+  width: 50%;
+  margin: auto;
 }
 #rankSearchTitle{
   background-color: rgb(255, 244, 205);

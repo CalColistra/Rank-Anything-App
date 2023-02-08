@@ -3,7 +3,7 @@ import './style.css'
 import { app as firebase } from './javaScript/firebase-config'
 
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, setDoc, doc, getDoc, getDocs, updateDoc, collection, query, where} from 'firebase/firestore'
+import { getFirestore, setDoc, doc, getDoc, getDocs, addDoc, updateDoc, collection, query, where, arrayUnion} from 'firebase/firestore'
 
 //---------------------------------------------------------------------------------
 var signedIn = false;
@@ -20,6 +20,23 @@ class User {
     this.postCount = postCount;
   }
 }
+
+//post class:
+class Post {
+  constructor(userEmail, userName, rank, text, objectName, objectCreator, objectType, objectGenre) {
+    this.userEmail = userEmail;
+    this.userName = userName;
+    this.rank = rank;
+    this.text = text;
+    this.upvotes = 0;
+    this.downvotes = 0;
+    this.objectName = objectName;
+    this.objectCreator = objectCreator;
+    this.objectType = objectType;
+    this.objectGenre = objectGenre;
+  }
+}
+
 //---------------------------------------------------------------------------------
 //handle login/logout:
 const auth = getAuth(firebase)
@@ -53,7 +70,7 @@ onAuthStateChanged(auth, user => {
       loginBtn.classList.add('hide');
       logoutBtn.classList.remove('hide');
       logoutBtn.classList.add('show');
-      checkAccount(user.email);
+      checkAccount(user.email, user.displayName);
       signedIn = true;
       displayUser.classList.remove('hide');
       displayUser.classList.add('show');
@@ -68,7 +85,7 @@ onAuthStateChanged(auth, user => {
 })
 
 //function that checks if it is a returning user or a first time log in:
-async function checkAccount(email){
+async function checkAccount(email, name){
   const userRef = doc(db, "users", email);
   const docSnap = await getDoc(userRef);
 
@@ -78,15 +95,16 @@ if (docSnap.exists()) {
 } else {
     // doc.data() will be undefined in this case
     console.log("New user!");
+    currentUser = new User(email, name, 0, 0, 0, 0);
     await setDoc(doc(db, "users", email), {
       userName: currentUser.userName,
       email: email,
       followers: [],
       following: [],
       reputation: 0,
-      postCount:0
+      postCount:0,
+      postIds:[]
     });
-    currentUser = new User(email,docSnap.data().userName, docSnap.data().followers, docSnap.data().following, docSnap.data().reputation, docSnap.data().postCount);
   }
   displayUser.innerHTML = 'Signed in as: ' + currentUser.userName;
 }
@@ -110,7 +128,7 @@ const rankLabel = document.querySelector('#rankLabel');
 
 const profileBtn = document.querySelector('#profileBtn');
 const profileSection = document.querySelector('#profile');
-const profileLabel = document.querySelector('#profileLabel');
+const profileLabel = document.querySelector('#profileNavLabel');
 
 const sections = document.getElementsByClassName('section');
 const navLabels = document.getElementsByClassName('navLabel');
@@ -178,21 +196,80 @@ rankBtn.addEventListener('click', () => {
 })
 
 async function addListenersPost(matchingIds, matchingResults) {
+  var userChoiceName, userChoiceCreator, userChoiceType, userChoiceGenre;
   for (let i=0; i < matchingIds.length; i++) {
     var currentId = "#" + matchingIds[i];
     //console.log(currentId);
-
     var currentResult = document.querySelector(currentId);
     //console.log(currentResult);
     const postForm = document.querySelector("#postForm");
     currentResult.addEventListener('click', () => {
-      var postFormString = "<strong>"+matchingResults[i].name;
-      postFormString += "</strong>";
-      postForm.innerHTML = postFormString;
+      userChoiceName = matchingResults[i].name;
+      userChoiceCreator = matchingResults[i].creator;
+      userChoiceType = matchingResults[i].type;
+      userChoiceGenre = matchingResults[i].genre;
+      updatePostForm(userChoiceName, userChoiceCreator, userChoiceType, userChoiceGenre);
     })
   }
 }
 
+async function updatePostForm(userChoiceName, userChoiceCreator, userChoiceType, userChoiceGenre){
+  var postFormString = "<div> <strong>"+userChoiceName;
+      postFormString += "</strong>";
+      postFormString += " by " + userChoiceCreator +"</div>";
+      postFormString += "<div id='scaleInput'> <div id = 'postLabel'>Your rank on 0-5 scale: </div>";
+      postFormString += "<input type='range' min='0' max='50' value='0' id='rankInput'>";
+      postFormString += "<div id='displaySliderValue'> </div>";
+      
+      postFormString += "</div>";
+      postFormString += "<div id='postText'>";
+      postFormString += "<div>Add text to your post: </br> (optional) </br></br></div>";
+      postFormString += "<textarea id='textArea' maxlength='500'></textarea>";
+      postFormString += "</div>";
+      postFormString += "</br><button id='publishPost' type='submit'>Publish</button></br>";
+      postForm.innerHTML = postFormString;
+      handlePostInput(userChoiceName, userChoiceCreator, userChoiceType, userChoiceGenre);
+}
+
+async function handlePostInput(objectName, objectCreator, type, genre) {
+  const slider = document.querySelector("#rankInput");
+  const displaySliderValue = document.querySelector("#displaySliderValue");
+  var sliderValue = 0;
+  displaySliderValue.innerHTML = sliderValue;
+  slider.oninput = function() {
+    sliderValue = this.value;
+    sliderValue = sliderValue/10;
+    displaySliderValue.innerHTML = sliderValue;
+  }
+
+  const textArea = document.querySelector("#textArea");
+  postForm.addEventListener('submit', async e =>{
+    e.preventDefault();
+    //check if user has already made a post for this object**********
+    var userText = textArea.value;
+    var userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, objectName, objectCreator, type, genre);
+    console.log(userPost.text);
+    
+    const newPostRef = await addDoc(collection(db, "posts"), {
+      publisher: userPost.userEmail,
+      publisherName: userPost.userName,
+      rank: userPost.rank,
+      text: userPost.text,
+      objectName: userPost.objectName,
+      objectCreator: userPost.objectCreator,
+      type: userPost.objectType,
+      genre: userPost.objectGenre,
+      upvotes: userPost.upvotes,
+      downvotes: userPost.downvotes
+    });
+    const newPostId = newPostRef.id;
+    currentUser.postCount = currentUser.postCount+1;
+    await updateDoc(doc(db,"users", currentUser.userEmail), {
+      postCount: currentUser.postCount,
+      postIds: arrayUnion(newPostId)
+    })
+  })
+}
 
 async function displayPostSection(){
   for (var i = 0; i < sections.length; i++) {
