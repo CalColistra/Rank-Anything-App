@@ -438,12 +438,15 @@ async function displayProfilePosts() {
     let docSnap = await getDoc(postRef);
     if (docSnap.exists()) {
       profilePostsString += "<div id='"+currentId+"' class = 'aPost'>";
-        profilePostsString += "<div id='"+currentId+"Rank' class='displayRank'><div id = 'rankPostLabel"+currentId+"' class='profilePostLabel'>Rank:</div><div class='rankValue'>"+docSnap.data().rank+"</div></div>";
+        profilePostsString += "<div id='Rank"+currentId+"' class='displayRank'><div id = 'rankPostLabel"+currentId+"' class='profilePostLabel'>Rank:</div><div class='rankValue'>"+docSnap.data().rank+"</div></div>";
         profilePostsString += "<div id = 'postContent'>";
             profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><div id='titleValue'>"+docSnap.data().objectName+" by "+docSnap.data().objectCreator;
             profilePostsString += "</div></div>";
-            profilePostsString += "<div id = 'rightPostContent'><div id = 'votesPostLabel"+currentId+"' class='profilePostLabel'>Votes:</div><div id='voteValue'>Upvotes: "+docSnap.data().upvotes;
-            profilePostsString +="</br>Downvotes: "+docSnap.data().downvotes+"</div></div>";
+            let upvotes = docSnap.data().upvotes;
+            let downvotes = docSnap.data().downvotes;
+            let votes = upvotes - downvotes;
+            profilePostsString += "<div id = 'rightPostContent'><div id = 'votesPostLabel"+currentId+"' class='profilePostLabel'>Votes:</div><div id='voteValue'>";
+            profilePostsString += votes+"</div></div>";
             profilePostsString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentId+"' class='textContainer'> <div id='"+currentId+"textValue' class='textValue'>";
             profilePostsString += docSnap.data().text+"</div></div></div>";
             profilePostsString += "<div id = 'deleteBtnContainer"+currentId+"'> <button id='deletePost"+currentId+"'>Delete Post</button>";
@@ -462,7 +465,7 @@ async function addListenersForPosts() {
     // handle edit post button press:
     const editPostId = "#editPost"+currentId;
     const editPostBtnRef = document.querySelector(editPostId);
-    const rankRef = document.querySelector("#"+currentId+"Rank");
+    const rankRef = document.querySelector("#Rank"+currentId);
     const textRef = document.querySelector("#textContainer"+currentId);
     const editPostContainer = document.querySelector("#deleteBtnContainer"+currentId);
     editPostBtnRef.addEventListener('click', async e => {
@@ -523,10 +526,10 @@ async function addListenersForPosts() {
       e.preventDefault();
       var deletePromptString = "";
       deletePromptString += "Are you sure you want to delete this post?</br>";
-      deletePromptString += "<button id='sureDelete'>Yes</button><button id='noDelete'>No</button>";
+      deletePromptString += "<button id='sureDelete"+currentId+"'>Yes</button><button id='noDelete'>No</button>";
       deleteBtnContainer.style = "background-color: #ffffff; border-style: solid;";
       deleteBtnContainer.innerHTML = deletePromptString;
-      const sureDelete = document.querySelector("#sureDelete");
+      const sureDelete = document.querySelector("#sureDelete"+currentId);
       const noDelete = document.querySelector("#noDelete");
       sureDelete.addEventListener('click', async e => {
         e.preventDefault();

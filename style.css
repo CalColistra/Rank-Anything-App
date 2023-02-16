@@ -191,11 +191,11 @@ input[type=submit]{
 }
 #leftPostContent{
   display: grid;
-  grid-template-rows:22% 78%;
+  grid-template-rows:40% 60%;
 }
 #rightPostContent{
   display: grid;
-  grid-template-rows: 22% 78%;
+  grid-template-rows: 40% 60%;
 }
 #titleValue{
   background-color: #ffffff;
@@ -205,6 +205,7 @@ input[type=submit]{
 }
 .editTextArea{
   width: 90%;
+  height: 90%;
 }
 
 
