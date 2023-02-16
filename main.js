@@ -3,7 +3,8 @@ import './style.css'
 import { app as firebase } from './javaScript/firebase-config'
 
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, setDoc, doc, getDoc, getDocs, addDoc, updateDoc, collection, query, where, arrayUnion} from 'firebase/firestore'
+import { getFirestore, setDoc, doc, getDoc, getDocs, addDoc, updateDoc, collection, query, where, arrayUnion, deleteDoc } from 'firebase/firestore'
+import { async } from '@firebase/util';
 
 //---------------------------------------------------------------------------------
 var signedIn = false;
@@ -11,13 +12,14 @@ const db = getFirestore(firebase)
 //---------------------------------------------------------------------------------
 //user class
 class User {
-  constructor(userEmail, userName, followers, following, reputation, postCount) {
+  constructor(userEmail, userName, followers, following, reputation, postCount, postIds) {
     this.userEmail = userEmail;
     this.userName = userName;
     this.followers = followers;
     this.following = following;
     this.reputation = reputation;
     this.postCount = postCount;
+    this.postIds = postIds;
   }
 }
 
@@ -45,14 +47,15 @@ const googleAuthProvider = new GoogleAuthProvider()
 const loginBtn = document.querySelector('.login')
 const logoutBtn = document.querySelector('.logout')
 const displayUser = document.querySelector('.username')
-const section = document.querySelector('section')
 
-loginBtn.addEventListener('click', () => {
+loginBtn.addEventListener('click', async e => {
+  e.preventDefault();
   signInWithPopup(auth, googleAuthProvider)
                   .then(auth => console.log(auth))
 })
 
-logoutBtn.addEventListener('click', () => {
+logoutBtn.addEventListener('click', async e => {
+  e.preventDefault();
   displayHomeSection();
   currentUser = null;
   signOut(auth).then(() => {
@@ -88,10 +91,9 @@ onAuthStateChanged(auth, user => {
 async function checkAccount(email, name){
   const userRef = doc(db, "users", email);
   const docSnap = await getDoc(userRef);
-
 if (docSnap.exists()) {
   console.log("Returning User:", docSnap.data());
-  currentUser = new User(email,docSnap.data().userName, docSnap.data().followers, docSnap.data().following, docSnap.data().reputation, docSnap.data().postCount);
+  currentUser = new User(email,docSnap.data().userName, docSnap.data().followers, docSnap.data().following, docSnap.data().reputation, docSnap.data().postCount, docSnap.data().postIds);
 } else {
     // doc.data() will be undefined in this case
     console.log("New user!");
@@ -108,6 +110,8 @@ if (docSnap.exists()) {
   }
   displayUser.innerHTML = 'Signed in as: ' + currentUser.userName;
 }
+
+
 //---------------------------------------------------------------------------------
 //handle nav bar buttons:
 const homeBtn = document.querySelector('#homeBtn');
@@ -149,7 +153,8 @@ async function displayHomeSection(){
   homeLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
 }
 
-homeBtn.addEventListener('click', () => {
+homeBtn.addEventListener('click', async e => {
+  e.preventDefault();
   if (signedIn==false) {
     alert("Please sign in with google.");
   }
@@ -159,7 +164,8 @@ homeBtn.addEventListener('click', () => {
 })
 //-----------------------------------------------------------------------------------------------------------
 //post section:
-rankBtn.addEventListener('click', () => {
+rankBtn.addEventListener('click', async e => {
+  e.preventDefault();
   if (signedIn==false) {
     alert("Please sign in with google.");
   }
@@ -171,25 +177,33 @@ rankBtn.addEventListener('click', () => {
     postSearchBarForm.addEventListener('submit', async e =>{
       e.preventDefault();
       var searchInputValue = searchBarInput.value;
-      const q = query(collection(db,"objects"), where("tags", "array-contains", searchInputValue));
-      const querySnapshot = await getDocs(q);
-      var matchingResults = [];
-      var matchingIds = [];
-      querySnapshot.forEach((doc) => {
-        // doc.data() is never undefined for query doc snapshots
-        //console.log(doc.id, " => ", doc.data());
-        matchingResults.push(doc.data());
-        matchingIds.push(doc.id);
-      });
-      console.log(matchingResults);
-      let resultsList = "";
-      for (let i=0; i < matchingResults.length; i++) {
-        resultsList += "<div><button id = '"+ matchingIds[i]+"' class = 'resultObject'><strong>";
-        resultsList += matchingResults[i].name + "</strong></br>"+matchingResults[i].creator;
-        resultsList += "</button><div/>";
+      const postForm = document.querySelector("#postForm");
+      if (searchInputValue == "") {
+        postForm.innerHTML = "&#8592; Find something to rank using the search bar on the left.";
+        searchResults.innerHTML = "";
       }
-      searchResults.innerHTML = resultsList;
-      addListenersPost(matchingIds,matchingResults);
+      else{
+        const q = query(collection(db,"objects"), where("tags", "array-contains", searchInputValue));
+        const querySnapshot = await getDocs(q);
+        var matchingResults = [];
+        var matchingIds = [];
+        querySnapshot.forEach((doc) => {
+          // doc.data() is never undefined for query doc snapshots
+          //console.log(doc.id, " => ", doc.data());
+          matchingResults.push(doc.data());
+          matchingIds.push(doc.id);
+        });
+        //console.log(matchingResults);
+        let resultsList = "";
+        for (let i=0; i < matchingResults.length; i++) {
+          resultsList += "<div><button id = '"+ matchingIds[i]+"' class = 'resultObject'><strong>";
+          resultsList += matchingResults[i].name + "</strong></br>"+matchingResults[i].creator;
+          resultsList += "</button><div/>";
+        }
+        searchResults.innerHTML = resultsList;
+        addListenersPost(matchingIds,matchingResults);
+      }
+      
     })
   }
   
@@ -202,18 +216,18 @@ async function addListenersPost(matchingIds, matchingResults) {
     //console.log(currentId);
     var currentResult = document.querySelector(currentId);
     //console.log(currentResult);
-    const postForm = document.querySelector("#postForm");
-    currentResult.addEventListener('click', () => {
+    currentResult.addEventListener('click', async e => {
+      e.preventDefault();
       userChoiceName = matchingResults[i].name;
       userChoiceCreator = matchingResults[i].creator;
       userChoiceType = matchingResults[i].type;
       userChoiceGenre = matchingResults[i].genre;
-      updatePostForm(userChoiceName, userChoiceCreator, userChoiceType, userChoiceGenre);
+      updatePostForm(userChoiceName, userChoiceCreator, userChoiceType, userChoiceGenre, matchingIds[i]);
     })
   }
 }
 
-async function updatePostForm(userChoiceName, userChoiceCreator, userChoiceType, userChoiceGenre){
+async function updatePostForm(userChoiceName, userChoiceCreator, userChoiceType, userChoiceGenre, objectId){
   var postFormString = "<div> <strong>"+userChoiceName;
       postFormString += "</strong>";
       postFormString += " by " + userChoiceCreator +"</div>";
@@ -226,14 +240,16 @@ async function updatePostForm(userChoiceName, userChoiceCreator, userChoiceType,
       postFormString += "<div>Add text to your post: </br> (optional) </br></br></div>";
       postFormString += "<textarea id='textArea' maxlength='500'></textarea>";
       postFormString += "</div>";
-      postFormString += "</br><button id='publishPost' type='submit'>Publish</button></br>";
+      postFormString += "</br><button id='publish"+objectId+"' class='publishPostButton' type='submit'>Publish</button></br>";
       postForm.innerHTML = postFormString;
-      handlePostInput(userChoiceName, userChoiceCreator, userChoiceType, userChoiceGenre);
+      handlePostInput(userChoiceName, userChoiceCreator, userChoiceType, userChoiceGenre, objectId);
 }
 
-async function handlePostInput(objectName, objectCreator, type, genre) {
+async function handlePostInput(objectName, objectCreator, type, genre, objectId) {
   const slider = document.querySelector("#rankInput");
   const displaySliderValue = document.querySelector("#displaySliderValue");
+  const publishId = "#publish"+objectId;
+  const submitPostBtn = document.querySelector(publishId);
   var sliderValue = 0;
   displaySliderValue.innerHTML = sliderValue;
   slider.oninput = function() {
@@ -243,31 +259,55 @@ async function handlePostInput(objectName, objectCreator, type, genre) {
   }
 
   const textArea = document.querySelector("#textArea");
-  postForm.addEventListener('submit', async e =>{
+  submitPostBtn.addEventListener('click', async e =>{
     e.preventDefault();
     //check if user has already made a post for this object**********
-    var userText = textArea.value;
-    var userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, objectName, objectCreator, type, genre);
-    console.log(userPost.text);
     
-    const newPostRef = await addDoc(collection(db, "posts"), {
-      publisher: userPost.userEmail,
-      publisherName: userPost.userName,
-      rank: userPost.rank,
-      text: userPost.text,
-      objectName: userPost.objectName,
-      objectCreator: userPost.objectCreator,
-      type: userPost.objectType,
-      genre: userPost.objectGenre,
-      upvotes: userPost.upvotes,
-      downvotes: userPost.downvotes
-    });
-    const newPostId = newPostRef.id;
-    currentUser.postCount = currentUser.postCount+1;
-    await updateDoc(doc(db,"users", currentUser.userEmail), {
-      postCount: currentUser.postCount,
-      postIds: arrayUnion(newPostId)
-    })
+    const objectRef = await getDoc(doc(db, "objects", objectId));
+    if (objectRef.exists()) {
+      const docSnap = objectRef.data();
+      const postCount = docSnap.postCount;
+      const postIds = docSnap.postIds;
+      //console.log(postIds);
+      if (postIds.includes(currentUser.userEmail)) {
+        alert("You have already made a post for " + objectName);
+      }
+      else {
+        await updateDoc(doc(db,"objects", objectId), {
+          postCount: postCount + 1,
+          postIds: arrayUnion(currentUser.userEmail)
+        })
+        var userText = textArea.value;
+        var userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, objectName, objectCreator, type, genre);
+        //console.log(userPost.text);
+        alert("You have successfully published your post about: " + objectName);
+        
+        const newPostRef = await addDoc(collection(db, "posts"), {
+          publisher: userPost.userEmail,
+          publisherName: userPost.userName,
+          rank: userPost.rank,
+          text: userPost.text,
+          objectName: userPost.objectName,
+          objectCreator: userPost.objectCreator,
+          type: userPost.objectType,
+          genre: userPost.objectGenre,
+          upvotes: userPost.upvotes,
+          downvotes: userPost.downvotes,
+          objectId: objectId
+        });
+        const newPostId = newPostRef.id;
+        currentUser.postCount = currentUser.postCount+1;
+        currentUser.postIds.push(newPostId);
+        await updateDoc(doc(db,"users", currentUser.userEmail), {
+          postCount: currentUser.postCount,
+          postIds: arrayUnion(newPostId)
+        })
+      }
+    }
+    else {
+      alert("error finding object");
+    }
+    
   })
 }
 
@@ -326,7 +366,7 @@ const profileFollowers = document.querySelector("#profileFollowers");
 const profileReputation = document.querySelector("#profileReputation");
 const profileTitle = document.querySelector("#profileTitle");
 const postCount = document.querySelector("#postCount");
-
+const profilePosts = document.querySelector("#profilePosts");
 
 
 profileBtn.addEventListener('click', () => {
@@ -385,6 +425,152 @@ async function displayProfileSection() {
         }
       })
     })
+    displayProfilePosts();
+}
+
+async function displayProfilePosts() {
+  //console.log(currentUser.postIds);
+  var profilePostsString = "";
+  for (let i = 0; i < currentUser.postIds.length; i++) {
+    //console.log("init");
+    let currentId = currentUser.postIds[i];
+    let postRef = doc(db, "posts", currentId);
+    let docSnap = await getDoc(postRef);
+    if (docSnap.exists()) {
+      profilePostsString += "<div id='"+currentId+"' class = 'aPost'>";
+        profilePostsString += "<div id='"+currentId+"Rank' class='displayRank'><div id = 'rankPostLabel"+currentId+"' class='profilePostLabel'>Rank:</div><div class='rankValue'>"+docSnap.data().rank+"</div></div>";
+        profilePostsString += "<div id = 'postContent'>";
+            profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><div id='titleValue'>"+docSnap.data().objectName+" by "+docSnap.data().objectCreator;
+            profilePostsString += "</div></div>";
+            profilePostsString += "<div id = 'rightPostContent'><div id = 'votesPostLabel"+currentId+"' class='profilePostLabel'>Votes:</div><div id='voteValue'>Upvotes: "+docSnap.data().upvotes;
+            profilePostsString +="</br>Downvotes: "+docSnap.data().downvotes+"</div></div>";
+            profilePostsString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentId+"' class='textContainer'> <div id='"+currentId+"textValue' class='textValue'>";
+            profilePostsString += docSnap.data().text+"</div></div></div>";
+            profilePostsString += "<div id = 'deleteBtnContainer"+currentId+"'> <button id='deletePost"+currentId+"'>Delete Post</button>";
+            profilePostsString += "<button id='editPost"+currentId+"'><img id='editIcon' src='/assets/editIcon.5de888a8.png'>Edit Post</button></div>"; 
+            profilePostsString += "</div>";
+      profilePostsString += "</div>";
+    }
+  }
+  profilePosts.innerHTML = profilePostsString;
+  addListenersForPosts();  
+}
+
+async function addListenersForPosts() {
+  for (let i = 0; i < currentUser.postIds.length; i++) {
+    let currentId = currentUser.postIds[i];
+    // handle edit post button press:
+    const editPostId = "#editPost"+currentId;
+    const editPostBtnRef = document.querySelector(editPostId);
+    const rankRef = document.querySelector("#"+currentId+"Rank");
+    const textRef = document.querySelector("#textContainer"+currentId);
+    const editPostContainer = document.querySelector("#deleteBtnContainer"+currentId);
+    editPostBtnRef.addEventListener('click', async e => {
+      e.preventDefault();
+      editPostContainer.innerHTML = "<button id='confirmChanges"+currentId+"'>Confirm Changes</button><button id='cancel"+currentId+"'>Cancel Changes</button>";
+      var newRankString;
+      newRankString = "<div> <div class = 'profilePostLabel'>Your rank on 0-5 scale: </div>"
+      let postRef = doc(db, "posts", currentId);
+      let docSnap = await getDoc(postRef);
+      let oldRankValue = docSnap.data().rank;
+      let sliderValue = oldRankValue;
+      oldRankValue = oldRankValue*10;
+      newRankString += "<input type='range' min='0' max='50' value='"+oldRankValue+"' id='newRankInput"+currentId+"'>";
+      newRankString += "<div id='rankValue"+currentId+"' class='rankValue' > </div>";
+      rankRef.innerHTML = newRankString;
+      const slider = document.querySelector("#newRankInput"+currentId);
+      const displaySliderValue = document.querySelector("#rankValue"+currentId);
+      displaySliderValue.innerHTML = oldRankValue/10;
+      slider.oninput = function() {
+        sliderValue = this.value;
+        sliderValue = sliderValue/10;
+        displaySliderValue.innerHTML = sliderValue;
+      }
+
+      const textLabel = document.querySelector("#textPostLabel"+currentId);
+      textLabel.innerHTML = "Edit your text:";
+      var newTextString;
+      var oldText = docSnap.data().text;
+      newTextString = "<textarea id='editTextArea"+currentId+"' class='editTextArea' maxlength='500'>"+oldText+"</textarea>";
+      textRef.innerHTML = newTextString;
+
+      const confirmChangesBtn = document.querySelector('#confirmChanges'+currentId);
+      confirmChangesBtn.addEventListener('click', async e => {
+        e.preventDefault();
+        let newTextContent = document.querySelector("#editTextArea"+currentId).value;
+        await updateDoc(postRef, {
+          rank: sliderValue,
+          text: newTextContent
+        })
+        alert("You have successfully editted your post.");
+        displayProfileSection();
+      });
+      const cancelChangesBtn = document.querySelector('#cancel'+currentId);
+      cancelChangesBtn.addEventListener('click', async e => {
+        e.preventDefault();
+        displayProfileSection();
+      });
+    });
+
+
+
+
+    // handle delete button press:
+    const deleteBtnId = "#deletePost"+currentId;
+    const deleteBtnRef = document.querySelector(deleteBtnId);
+    const deleteBtnContainer = document.querySelector("#deleteBtnContainer"+currentId);
+    deleteBtnRef.addEventListener('click', async e => {
+      e.preventDefault();
+      var deletePromptString = "";
+      deletePromptString += "Are you sure you want to delete this post?</br>";
+      deletePromptString += "<button id='sureDelete'>Yes</button><button id='noDelete'>No</button>";
+      deleteBtnContainer.style = "background-color: #ffffff; border-style: solid;";
+      deleteBtnContainer.innerHTML = deletePromptString;
+      const sureDelete = document.querySelector("#sureDelete");
+      const noDelete = document.querySelector("#noDelete");
+      sureDelete.addEventListener('click', async e => {
+        e.preventDefault();
+        let postSnap = await getDoc(doc(db, "posts", currentId));
+        let objectId = postSnap.data().objectId;
+        
+        let docSnap = await getDoc(doc(db, "objects", objectId));
+        let objectPostCount = docSnap.data().postCount;
+        let objectPostIds = docSnap.data().postIds;
+        let updatedIds = [];
+        for (let i = 0; i < objectPostIds.length; i++) {
+          if (objectPostIds[i] != currentUser.userEmail) {
+            updatedIds.push(objectPostIds[i]);
+          }
+        }
+        objectPostCount = objectPostCount -1;
+        await updateDoc(doc(db,"objects", objectId), {
+          postIds: updatedIds,
+          postCount: objectPostCount
+        })
+        let userSnap = await getDoc(doc(db, "users", currentUser.userEmail));
+        let userPostCount = userSnap.data().postCount;
+        let userPostIds = userSnap.data().postIds;
+        let updatedUserPostIds = [];
+        for (let i = 0; i < userPostIds.length; i++) {
+          if (userPostIds[i] != currentId) {
+            updatedUserPostIds.push(userPostIds[i]);
+          }
+        }
+        userPostCount = userPostCount -1;
+        await updateDoc(doc(db,"users", currentUser.userEmail), {
+          postIds: updatedUserPostIds,
+          postCount: userPostCount
+        })
+        await deleteDoc(doc(db, "posts", currentId));
+        currentUser.postIds = updatedUserPostIds;
+        currentUser.postCount = userPostCount;
+        displayProfileSection();
+      })
+      noDelete.addEventListener('click', async e => {
+        displayProfileSection();
+      })
+    })
+  }
 }
 //---------------------------------------------------------------------------------
 

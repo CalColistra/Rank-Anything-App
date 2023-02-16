@@ -23,6 +23,21 @@ body {
   display: block;
 }
 
+#userNamePopUp{
+  display: none;
+  width: fit-content;
+  height: fit-content;
+  position: fixed;
+  z-index: 5;
+  border-style: solid;
+  border-width: 3px;
+  background-color: #d3d3d3;
+  margin: auto;
+}
+#namePrompt{
+  display: grid;
+  grid-template-columns: 40% 60%;
+}
 
 button {
   border-radius: 8px;
@@ -107,11 +122,7 @@ section{
 .profileLabel{
   font-size: 1.2vw;
 }
-#profilePosts{
-  display: grid;
-  grid-template-columns: 100%;
-  grid-template-rows: 30%;
-}
+
 .smallEditBtn{
   display: inline;
   width: max-content;
@@ -137,6 +148,71 @@ input[type=submit]{
   background-color: transparent;
   font-weight: bold;
   font-size: 1.5vw;
+}
+#profilePosts{
+  display: grid;
+  grid-template-columns: 100%;
+  border-style: solid;
+}
+.aPost{
+  display: grid;
+  grid-template-columns: 20% 80%;
+  border-bottom-style: solid;
+}
+.profilePostLabel{
+  font-size: 1.3vw;
+  text-align: left;
+  padding-left: 3%;
+}
+.displayRank{
+  display: grid;
+  grid-template-rows: 14% 86%;
+}
+.rankValue{
+  font-size: 6vw;
+  font-weight: bold;
+  background-color: #ffffff;
+  margin-right: auto;
+  margin-left: auto;
+  margin-top: auto;
+  margin-bottom: auto;
+  border-radius: 30%;
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgba(251, 0, 0, 0.375);
+  width: max-content;
+  padding-left: 5%;
+  padding-right: 5%;
+}
+#postContent{
+  display: grid;
+  grid-template-columns: 80% 20%;
+  border-left-style: solid;
+}
+#leftPostContent{
+  display: grid;
+  grid-template-rows:22% 78%;
+}
+#rightPostContent{
+  display: grid;
+  grid-template-rows: 22% 78%;
+}
+#titleValue{
+  background-color: #ffffff;
+  text-align: left;
+  margin-right: auto;
+  margin-bottom: auto;
+}
+.editTextArea{
+  width: 90%;
+}
+
+
+
+.publishPostButton{
+  width: 37%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 #rankContainer{
@@ -164,6 +240,16 @@ border-right-style: solid;
 }
 #textArea{
   width: 100%;
+}
+.textValue{
+  background-color: #ffffff;
+  text-align: left;
+  width: max-content;
+}
+.textContainer{
+  width: 90%;
+  margin: auto;
+  text-align: left;
 }
 #postText{
   display: grid;
