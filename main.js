@@ -438,10 +438,12 @@ async function displayProfilePosts() {
     let docSnap = await getDoc(postRef);
     if (docSnap.exists()) {
       profilePostsString += "<div id='"+currentId+"' class = 'aPost'>";
-        profilePostsString += "<div id='Rank"+currentId+"' class='displayRank'><div id = 'rankPostLabel"+currentId+"' class='profilePostLabel'>Rank:</div><div class='rankValue'>"+docSnap.data().rank+"</div></div>";
+        profilePostsString += "<div id='Rank"+currentId+"' class='displayRank'><div id = 'rankPostLabel"+currentId+"' class='profilePostLabel'>";
+        profilePostsString += "Rank:</div><div class='rankValue'>"+docSnap.data().rank+"</div></div>";
         profilePostsString += "<div id = 'postContent'>";
-            profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><div id='titleValue'>"+docSnap.data().objectName+" by "+docSnap.data().objectCreator;
-            profilePostsString += "</div></div>";
+            profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+currentId+"' class='titleValue'>";
+            profilePostsString += docSnap.data().objectName+" by "+docSnap.data().objectCreator;
+            profilePostsString += "</a></div>";
             let upvotes = docSnap.data().upvotes;
             let downvotes = docSnap.data().downvotes;
             let votes = upvotes - downvotes;
@@ -462,7 +464,17 @@ async function displayProfilePosts() {
 async function addListenersForPosts() {
   for (let i = 0; i < currentUser.postIds.length; i++) {
     let currentId = currentUser.postIds[i];
-    // handle edit post button press:
+    let postRef = doc(db, "posts", currentId);
+    let docSnap = await getDoc(postRef);
+    // handle title anchor press  --------------------------------------------------------------------------------------
+    const titleClickRef = document.querySelector("#titleValue"+currentId);
+    const currentObjectId = docSnap.data().objectId;
+    titleClickRef.addEventListener('click', async e => {
+      e.preventDefault();
+      displayObjectPopup(currentObjectId);
+    });
+
+    // handle edit post button press  --------------------------------------------------------------------------------------
     const editPostId = "#editPost"+currentId;
     const editPostBtnRef = document.querySelector(editPostId);
     const rankRef = document.querySelector("#Rank"+currentId);
@@ -473,8 +485,7 @@ async function addListenersForPosts() {
       editPostContainer.innerHTML = "<button id='confirmChanges"+currentId+"'>Confirm Changes</button><button id='cancel"+currentId+"'>Cancel Changes</button>";
       var newRankString;
       newRankString = "<div> <div class = 'profilePostLabel'>Your rank on 0-5 scale: </div>"
-      let postRef = doc(db, "posts", currentId);
-      let docSnap = await getDoc(postRef);
+  
       let oldRankValue = docSnap.data().rank;
       let sliderValue = oldRankValue;
       oldRankValue = oldRankValue*10;
@@ -518,7 +529,7 @@ async function addListenersForPosts() {
 
 
 
-    // handle delete button press:
+    // handle delete button press  --------------------------------------------------------------------------------------
     const deleteBtnId = "#deletePost"+currentId;
     const deleteBtnRef = document.querySelector(deleteBtnId);
     const deleteBtnContainer = document.querySelector("#deleteBtnContainer"+currentId);
@@ -576,6 +587,83 @@ async function addListenersForPosts() {
   }
 }
 //---------------------------------------------------------------------------------
+// display object popup section:
+const objectPopupRef = document.querySelector("#objectPopup");
+async function displayObjectPopup(objectId) {
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].style.display = 'none';
+  }
+  for (var i = 0; i < navLabels.length; i++) {
+    navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
+  }
+  objectPopupRef.style.display="block";
+  let docSnap = await getDoc(doc(db, "objects", objectId));
+  const q = query(collection(db,"posts"), where("objectId", "==", objectId));
+  const querySnapshot = await getDocs(q);
+  var rankTotals = 0;
+  let postIds = [];
+  querySnapshot.forEach((doc) => {
+    // doc.data() is never undefined for query doc snapshots
+    //console.log(doc.id, " => ", doc.data());
+    rankTotals = rankTotals + doc.data().rank;
+    postIds.push(doc.id);
+  });
+  
+  const objectPostCount = docSnap.data().postCount;
+  const averageRank = rankTotals/objectPostCount;
+  const topDisplay = document.querySelector("#objectPopupTop");
+  const bottomDisplay = document.querySelector("#objectPopupBottom");
+  var topString;
+  topString = "<div id='leftObjectContent'><div class='objectLabel'>Average Rank:</div>";
+  topString += "<div class='averageRank'>"+averageRank+"</div>";
+  topString += "</div>";
+  topString += "<div id='rightObjectContent'><div class='objectLabel'>Title:</div>";
+  topString += "<div class='objectLabel'>Release Date:</div>";
+  topString += "<div class='titleValue'><strong>"+docSnap.data().name+"</strong></br>";
+  topString += "&nbsp;&nbsp;&nbsp;<a href='#'>"+docSnap.data().creator+"</a>";
+  topString += "</div>";
+  topString += "<div><strong>"+docSnap.data().releaseDate+"</strong></br>";
+  if (objectPostCount == 1) var haveRanked = "<strong>"+objectPostCount+"</strong> user has ranked "+docSnap.data().name;
+  else var haveRanked = "<strong>"+objectPostCount+"</strong> users have ranked "+docSnap.data().name;
+  topString += haveRanked;
+  topString += "</div>";
+  topString += "</div>";
+  topDisplay.innerHTML = topString;
+  var bottomString;
+  bottomString = "<h4>Top Posts for "+docSnap.data().name+"</h4>";
+  bottomString += "<div id='objectPopupPosts'>";
+  for (let i = 0; i < postIds.length; i++) {
+    var currentPostId = postIds[i];
+    let postSnap = await getDoc(doc(db, "posts", currentPostId));
+    bottomString += "<div id ='objectPost"+currentPostId+"' class='aPost'>";
+      
 
+        bottomString += "<div class='displayRank'>";
+          bottomString += "<div class='profilePostLabel'>Rank:</div>";
+          bottomString += "<div class='rankValue'>"+postSnap.data().rank+"</div>";
+        bottomString += "</div>";
+
+        bottomString += "<div id='postContent'>";
+
+            bottomString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentPostId+"' class='profilePostLabel'>Title:</div><div class='titleValue'>";
+            bottomString += "<strong>"+postSnap.data().objectName+"</strong> by "+postSnap.data().objectCreator;
+            bottomString += "</div></div>";
+            let upvotes = postSnap.data().upvotes;
+            let downvotes = postSnap.data().downvotes;
+            let votes = upvotes - downvotes;
+            bottomString += "<div id = 'rightPostContent'><div id = 'votesPostLabel"+currentPostId+"' class='profilePostLabel'>Votes:</div><div id='voteValue'>";
+            bottomString += votes+"</div></div>";
+            bottomString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentPostId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentPostId+"' class='textContainer'> <div id='"+currentPostId+"textValue' class='textValue'>";
+            bottomString += postSnap.data().text+"</div></div></div>"; 
+            bottomString += "</div>";
+
+        bottomString += "</div>";
+
+      
+    bottomString += "</div>"
+  }
+  bottomString += "</div>";
+  bottomDisplay.innerHTML = bottomString;
+}
 
 

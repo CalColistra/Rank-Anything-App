@@ -152,12 +152,14 @@ input[type=submit]{
 #profilePosts{
   display: grid;
   grid-template-columns: 100%;
-  border-style: solid;
 }
 .aPost{
   display: grid;
   grid-template-columns: 20% 80%;
-  border-bottom-style: solid;
+  margin-top: 1%;
+  background-color: #ffffff;
+  border-radius: 10px;
+  height: max-content;
 }
 .profilePostLabel{
   font-size: 1.3vw;
@@ -192,28 +194,88 @@ input[type=submit]{
 #leftPostContent{
   display: grid;
   grid-template-rows:40% 60%;
+  margin-bottom: 3%;
 }
 #rightPostContent{
   display: grid;
   grid-template-rows: 40% 60%;
 }
-#titleValue{
+.titleValue{
   background-color: #ffffff;
   text-align: left;
   margin-right: auto;
   margin-bottom: auto;
+  border-top-style: solid;
+  border-bottom-style: solid;
+  border-color: #282828;
+  border-width: 1px;
 }
 .editTextArea{
   width: 90%;
   height: 90%;
 }
+#objectPopupContainer{
+  display: grid;
+  grid-template-rows: 30% 70%;
+  margin-top: 1%;
+}
+#objectPopupTop{
+  display: grid;
+  grid-template-columns: 20% 80%;
+  height: max-content;
+  background-color: #ffffff;
+  border-radius: 10px;
+}
+#leftObjectContent{
+  display: grid;
+  grid-template-rows: 14% 86%;
+}
+.averageRank{
+  font-size: 6vw;
+  font-weight: bold;
+  background-color: #ffffff;
+  margin-right: auto;
+  margin-left: auto;
+  margin-top: 2%;
+  margin-bottom: 5%;
+  border-radius: 30%;
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgba(251, 0, 0, 0.375);
+  width: max-content;
+  padding-left: 5%;
+  padding-right: 5%;
+}
+#rightObjectContent{
+  display: grid;
+  grid-template-columns: 70% 30%;
+  grid-template-rows: 14% 86%;
+}
 
-
-
+.objectLabel{
+  font-size: 1.3vw;
+  text-align: left;
+  padding-left: 3%;
+}
 .publishPostButton{
   width: 37%;
   margin-left: auto;
   margin-right: auto;
+}
+#objectPopupBottom{
+  margin-top: auto;
+}
+#objectPopupPosts{
+  display: grid;
+  grid-template-rows: 25%;
+}
+.objectPost {
+  height: max-content;
+  background-color: #ffffff;
+  border-radius: 10px;
+  display: grid;
+  grid-template-rows: 5% 95%;
+
 }
 
 #rankContainer{
