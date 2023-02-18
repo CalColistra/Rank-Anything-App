@@ -200,6 +200,35 @@ input[type=submit]{
   display: grid;
   grid-template-rows: 40% 60%;
 }
+.voteContainer{
+  display: grid;
+  grid-template-columns: 50% 50%;
+  grid-template-rows: 100%;
+  height: 100%;
+}
+.voteButtonContainer{
+  display: grid;
+  grid-template-rows: 50% 50%;
+  height: 100%;
+}
+.voteArrow{
+  height: 100%;
+}
+.voteValue{
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-right: auto;
+}
+.voteArrowBtn{
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 100%;
+  height: 100%;
+  width: max-content;
+  border-style: none;
+  background-color: transparent;
+  margin-left: auto;
+}
 .titleValue{
   background-color: #ffffff;
   text-align: left;
@@ -267,7 +296,7 @@ input[type=submit]{
 }
 #objectPopupPosts{
   display: grid;
-  grid-template-rows: 25%;
+  grid-template-rows: 15% 25%;
 }
 .objectPost {
   height: max-content;
