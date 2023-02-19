@@ -220,7 +220,7 @@ async function addListenersPost(matchingIds) {
 }
 
 async function setUpListener(currentResult, objectId) {
-  console.log("setting up listener for object: " +objectId);
+  //console.log("setting up listener for object: " +objectId);
   currentResult.addEventListener('click', async e => {
     e.preventDefault();
     updatePostForm(objectId);
@@ -402,6 +402,7 @@ const profileReputation = document.querySelector("#profileReputation");
 const profileTitle = document.querySelector("#profileTitle");
 const postCount = document.querySelector("#postCount");
 const profilePosts = document.querySelector("#profilePosts");
+const editNameBtn = document.querySelector("#editName");
 
 
 profileBtn.addEventListener('click', () => {
@@ -415,83 +416,161 @@ profileBtn.addEventListener('click', () => {
     for (var i = 0; i < navLabels.length; i++) {
       navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
     }
-    displayProfileSection();
+    displayProfileSection(currentUser.userEmail);
   }
 })
 
-async function displayProfileSection() {
+async function displayProfileSection(userId) {
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].style.display = 'none';
+  }
+  for (var i = 0; i < navLabels.length; i++) {
+    navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
+  }
     editNameForm.innerHTML ="";
     profileSection.style.display="block";
-    profileTitle.innerHTML = "<h1>Your Profile</h1>";
-    profileLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-    displayUsername.innerHTML = "<h2>"+currentUser.userName+"</h2>";
-    profileFollowers.innerHTML = "<h2>"+currentUser.followers.length+"</h2>";
-    profileFollowing.innerHTML = "<h2>"+currentUser.following.length+"</h2>";
-    profileReputation.innerHTML = "<h2>"+currentUser.reputation+"</h2>";
-    postCount.innerHTML = "<h2>"+currentUser.postCount+"</h2>";
+    //console.log(userId, currentUser.userEmail);
+    if (userId == currentUser.userEmail) {
+      profileTitle.innerHTML = "<h1>Your Profile</h1>";
+      profileLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+      displayUsername.innerHTML = "<h2>"+currentUser.userName+"</h2>";
+      profileFollowers.innerHTML = "<h2>"+currentUser.followers.length+"</h2>";
+      profileFollowing.innerHTML = "<h2>"+currentUser.following.length+"</h2>";
+      profileReputation.innerHTML = "<h2>"+currentUser.reputation+"</h2>";
+      postCount.innerHTML = "<h2>"+currentUser.postCount+"</h2>";
 
-    const editNameBtn = document.querySelector("#editName");
-    editNameBtn.style.display="inline";
-    const submitNameBtn = "&nbsp; <button id='submitButton' class='smallEditBtn'><input value='Submit' type='submit'></button>";
-    
-    editNameBtn.addEventListener('click', () => {
-      editNameBtn.style.display="none";
-      editNameForm.innerHTML = "<form id='newNameForm'> <label>Enter your new username:</label>  <input id='newNameInput' type='text'>"+submitNameBtn +"</form>";
-      const newNameForm = document.querySelector("#newNameForm");
-      const newNameInput = document.querySelector("#newNameInput");
+      
+      editNameBtn.style.display="inline";
+      const submitNameBtn = "&nbsp; <button id='submitButton' class='smallEditBtn'><input value='Submit' type='submit'></button>";
+      
+      editNameBtn.addEventListener('click', () => {
+        editNameBtn.style.display="none";
+        editNameForm.innerHTML = "<form id='newNameForm'> <label>Enter your new username:</label>  <input id='newNameInput' type='text'>"+submitNameBtn +"</form>";
+        const newNameForm = document.querySelector("#newNameForm");
+        const newNameInput = document.querySelector("#newNameInput");
 
-      newNameForm.addEventListener('submit', async e =>{
-        var newName = newNameInput.value;
-        if (newName =='') {
-          alert("Please don't submit an empty username");
-        }
-        else if(newName.length>16) {
-          alert("Usernames must be less than 17 characters.");
-        }
-        else{
-          e.preventDefault();
-          editNameForm.innerHTML="";
-          currentUser.userName=newName;
-          await updateDoc(doc(db,"users", currentUser.userEmail), {
-            userName: newName
-          });
-          displayUser.innerHTML = 'Signed in as: ' + currentUser.userName;
-          displayProfileSection();
-        }
+        newNameForm.addEventListener('submit', async e =>{
+          var newName = newNameInput.value;
+          if (newName =='') {
+            alert("Please don't submit an empty username");
+          }
+          else if(newName.length>16) {
+            alert("Usernames must be less than 17 characters.");
+          }
+          else{
+            e.preventDefault();
+            editNameForm.innerHTML="";
+            currentUser.userName=newName;
+            await updateDoc(doc(db,"users", currentUser.userEmail), {
+              userName: newName
+            });
+            displayUser.innerHTML = 'Signed in as: ' + currentUser.userName;
+            displayProfileSection();
+          }
+        })
       })
-    })
-    displayProfilePosts();
+      displayProfilePosts(userId);
+    }
+    else if (userId != currentUser.userEmail) {
+      editNameBtn.style.display='none';
+      //console.log("in else");
+      let userRef = doc(db, "users", userId);
+      let userSnap = await getDoc(userRef);
+      profileTitle.innerHTML = "<h1>"+userSnap.data().userName+"'s Profile</h1>";
+      displayUsername.innerHTML = "<h2>"+userSnap.data().userName+"</h2>";
+      let followers = userSnap.data().followers;
+      let following = userSnap.data().following;
+      profileFollowers.innerHTML = "<h2>"+followers.length+"</h2>";
+      profileFollowing.innerHTML = "<h2>"+following.length+"</h2>";
+      profileReputation.innerHTML = "<h2>"+userSnap.data().reputation+"</h2>";
+      postCount.innerHTML = "<h2>"+userSnap.data().postCount+"</h2>";
+      displayProfilePosts(userId);
+    }
+    
+    
 }
 
 
 
 
-async function displayProfilePosts() {
+
+async function displayProfilePosts(userId) {
   //console.log(currentUser.postIds);
   var profilePostsString = "";
-  for (let i = 0; i < currentUser.postIds.length; i++) {
-    //console.log("init");
-    let currentId = currentUser.postIds[i];
-    let postRef = doc(db, "posts", currentId);
-    let docSnap = await getDoc(postRef);
-    if (docSnap.exists()) {
-      
-      profilePostsString += "<div id='"+currentId+"' class = 'aPost'>";
-      profilePostsString += "<div id='Rank"+currentId+"' class='displayRank'><div id = 'rankPostLabel"+currentId+"' class='profilePostLabel'>";
-      profilePostsString += "Rank:</div><div class='rankValue'>"+docSnap.data().rank+"</div></div>";
-      profilePostsString += "<div id = 'postContent'>";
-      const objectType = docSnap.data().type;
-      if ((objectType == "Song") || (objectType == "Film") || (objectType == "Book")) {
-        profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+currentId+"' class='titleValue'>";
-        profilePostsString += docSnap.data().objectName+" by "+docSnap.data().objectCreator;
-        profilePostsString += "</a></div>";
+  if (userId == currentUser.userEmail) {
+    for (let i = 0; i < currentUser.postIds.length; i++) {
+      //console.log("init");
+      let currentId = currentUser.postIds[i];
+      let postRef = doc(db, "posts", currentId);
+      let docSnap = await getDoc(postRef);
+      if (docSnap.exists()) {
+        
+        profilePostsString += "<div id='"+currentId+"' class = 'aPost'>";
+        profilePostsString += "<div id='Rank"+currentId+"' class='displayRank'><div id = 'rankPostLabel"+currentId+"' class='profilePostLabel'>";
+        profilePostsString += "Rank:</div><div class='rankValue'>"+docSnap.data().rank+"</div></div>";
+        profilePostsString += "<div id = 'postContent'>";
+        const objectType = docSnap.data().type;
+        if ((objectType == "Song") || (objectType == "Film") || (objectType == "Book")) {
+          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
+          profilePostsString += docSnap.data().objectName+" by "+docSnap.data().objectCreator;
+          profilePostsString += "</a></div>";
+        }
+        else if ((objectType == "Band") ||(objectType == "Artist") || (objectType == "Author") || (objectType == "Actor")) {
+          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
+          profilePostsString += docSnap.data().objectName;
+          profilePostsString += "</a></div>";
+        }
+            
+            let upvotes = docSnap.data().upvotes;
+            let downvotes = docSnap.data().downvotes;
+            let votes = upvotes - downvotes;
+            profilePostsString += "<div id = 'rightPostContent'><div id = 'votesPostLabel"+currentId+"' class='profilePostLabel'>Votes:</div>";
+            profilePostsString += "<div class='voteContainer'>";
+              profilePostsString += "<div class='voteButtonContainer'>";
+                profilePostsString += "<button class='voteArrowBtn' id = 'upVoteBtn"+currentId+"'> <img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIcon.png'> </button>";
+                profilePostsString += "<button class='voteArrowBtn' id = 'downVoteBtn"+currentId+"'> <img class='voteArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIcon.png'> </button>";
+              profilePostsString += "</div>";
+            profilePostsString += "<div class='voteValue'>"+votes+"</div>";
+            profilePostsString += "</div></div>";
+            profilePostsString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentId+"' class='textContainer'> <div id='"+currentId+"textValue' class='textValue'>";
+            profilePostsString += docSnap.data().text+"</div></div></div>";
+            profilePostsString += "<div id = 'deleteBtnContainer"+currentId+"'> <button id='deletePost"+currentId+"'>Delete Post</button>";
+            profilePostsString += "<button id='editPost"+currentId+"'><img id='editIcon' src='/assets/editIcon.5de888a8.png'>Edit Post</button></div>"; 
+            profilePostsString += "</div>";
+        profilePostsString += "</div>";        
+        
+        
       }
-      else if ((objectType == "Band") ||(objectType == "Artist") || (objectType == "Author") || (objectType == "Actor")) {
-        profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+currentId+"' class='titleValue'>";
-        profilePostsString += docSnap.data().objectName;
-        profilePostsString += "</a></div>";
-      }
-          
+    }
+  }
+  else {
+    //console.log("displaying " + userId+" posts");
+    let userRef = doc(db, "users", userId);
+    let userSnap = await getDoc(userRef);
+    for (let i = 0; i < userSnap.data().postCount; i++) {
+      //console.log("init");
+      let postIds = userSnap.data().postIds;
+      let currentId = postIds[i];
+      let postRef = doc(db, "posts", currentId);
+      let docSnap = await getDoc(postRef);
+      if (docSnap.exists()) {
+        
+        profilePostsString += "<div id='"+currentId+"' class = 'aPost'>";
+        profilePostsString += "<div id='Rank"+currentId+"' class='displayRank'><div id = 'rankPostLabel"+currentId+"' class='profilePostLabel'>";
+        profilePostsString += "Rank:</div><div class='rankValue'>"+docSnap.data().rank+"</div></div>";
+        profilePostsString += "<div id = 'postContent'>";
+        const objectType = docSnap.data().type;
+        if ((objectType == "Song") || (objectType == "Film") || (objectType == "Book")) {
+          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
+          profilePostsString += docSnap.data().objectName+" by "+docSnap.data().objectCreator;
+          profilePostsString += "</a></div>";
+        }
+        else if ((objectType == "Band") ||(objectType == "Artist") || (objectType == "Author") || (objectType == "Actor")) {
+          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
+          profilePostsString += docSnap.data().objectName;
+          profilePostsString += "</a></div>";
+        }
+            
           let upvotes = docSnap.data().upvotes;
           let downvotes = docSnap.data().downvotes;
           let votes = upvotes - downvotes;
@@ -505,141 +584,165 @@ async function displayProfilePosts() {
           profilePostsString += "</div></div>";
           profilePostsString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentId+"' class='textContainer'> <div id='"+currentId+"textValue' class='textValue'>";
           profilePostsString += docSnap.data().text+"</div></div></div>";
-          profilePostsString += "<div id = 'deleteBtnContainer"+currentId+"'> <button id='deletePost"+currentId+"'>Delete Post</button>";
-          profilePostsString += "<button id='editPost"+currentId+"'><img id='editIcon' src='/assets/editIcon.5de888a8.png'>Edit Post</button></div>"; 
+          profilePostsString += "<div id = 'deleteBtnContainer"+currentId+"'> <button id='comments"+currentId+"'>Comments</button>";
+          profilePostsString += "<button id='editPost"+currentId+"'>Blank button</button></div>"; 
           profilePostsString += "</div>";
-      profilePostsString += "</div>";        
-      
-      
+        profilePostsString += "</div>";        
+        
+        
+      }
     }
   }
+  //console.log(profilePostsString);
   profilePosts.innerHTML = profilePostsString;
-  addListenersForPosts();  
+  addListenersForPosts(userId);  
 }
 
-async function addListenersForPosts() {
-  for (let i = 0; i < currentUser.postIds.length; i++) {
-    let currentId = currentUser.postIds[i];
-    let postRef = doc(db, "posts", currentId);
-    let docSnap = await getDoc(postRef);
-    // handle title anchor press  --------------------------------------------------------------------------------------
-    const titleClickRef = document.querySelector("#titleValue"+currentId);
-    const currentObjectId = docSnap.data().objectId;
-    titleClickRef.addEventListener('click', async e => {
-      e.preventDefault();
-      displayObjectPopup(currentObjectId);
-    });
-
-    // handle edit post button press  --------------------------------------------------------------------------------------
-    const editPostId = "#editPost"+currentId;
-    const editPostBtnRef = document.querySelector(editPostId);
-    const rankRef = document.querySelector("#Rank"+currentId);
-    const textRef = document.querySelector("#textContainer"+currentId);
-    const editPostContainer = document.querySelector("#deleteBtnContainer"+currentId);
-    editPostBtnRef.addEventListener('click', async e => {
-      e.preventDefault();
-      editPostContainer.innerHTML = "<button id='confirmChanges"+currentId+"'>Confirm Changes</button><button id='cancel"+currentId+"'>Cancel Changes</button>";
-      var newRankString;
-      newRankString = "<div> <div class = 'profilePostLabel'>Your rank on 0-5 scale: </div>"
-  
-      let oldRankValue = docSnap.data().rank;
-      let sliderValue = oldRankValue;
-      oldRankValue = oldRankValue*10;
-      newRankString += "<input type='range' min='0' max='50' value='"+oldRankValue+"' id='newRankInput"+currentId+"'>";
-      newRankString += "<div id='rankValue"+currentId+"' class='rankValue' > </div>";
-      rankRef.innerHTML = newRankString;
-      const slider = document.querySelector("#newRankInput"+currentId);
-      const displaySliderValue = document.querySelector("#rankValue"+currentId);
-      displaySliderValue.innerHTML = oldRankValue/10;
-      slider.oninput = function() {
-        sliderValue = this.value;
-        sliderValue = sliderValue/10;
-        displaySliderValue.innerHTML = sliderValue;
-      }
-
-      const textLabel = document.querySelector("#textPostLabel"+currentId);
-      textLabel.innerHTML = "Edit your text:";
-      var newTextString;
-      var oldText = docSnap.data().text;
-      newTextString = "<textarea id='editTextArea"+currentId+"' class='editTextArea' maxlength='500'>"+oldText+"</textarea>";
-      textRef.innerHTML = newTextString;
-
-      const confirmChangesBtn = document.querySelector('#confirmChanges'+currentId);
-      confirmChangesBtn.addEventListener('click', async e => {
+async function addListenersForPosts(userId) {
+  if (userId == currentUser.userEmail) {
+    for (let i = 0; i < currentUser.postIds.length; i++) {
+      let currentId = currentUser.postIds[i];
+      let postRef = doc(db, "posts", currentId);
+      let docSnap = await getDoc(postRef);
+      // handle title anchor press  --------------------------------------------------------------------------------------
+      const currentObjectId = docSnap.data().objectId;
+      const titleClickRef = document.querySelector("#titleValue"+currentObjectId);
+      
+      titleClickRef.addEventListener('click', async e => {
         e.preventDefault();
-        let newTextContent = document.querySelector("#editTextArea"+currentId).value;
-        await updateDoc(postRef, {
-          rank: sliderValue,
-          text: newTextContent
-        })
-        alert("You have successfully editted your post.");
-        displayProfileSection();
+        displayObjectPopup(currentObjectId);
       });
-      const cancelChangesBtn = document.querySelector('#cancel'+currentId);
-      cancelChangesBtn.addEventListener('click', async e => {
+
+      // handle edit post button press  --------------------------------------------------------------------------------------
+      const editPostId = "#editPost"+currentId;
+      const editPostBtnRef = document.querySelector(editPostId);
+      const rankRef = document.querySelector("#Rank"+currentId);
+      const textRef = document.querySelector("#textContainer"+currentId);
+      const editPostContainer = document.querySelector("#deleteBtnContainer"+currentId);
+      editPostBtnRef.addEventListener('click', async e => {
         e.preventDefault();
-        displayProfileSection();
+        editPostContainer.innerHTML = "<button id='confirmChanges"+currentId+"'>Confirm Changes</button><button id='cancel"+currentId+"'>Cancel Changes</button>";
+        var newRankString;
+        newRankString = "<div> <div class = 'profilePostLabel'>Your rank on 0-5 scale: </div>"
+    
+        let oldRankValue = docSnap.data().rank;
+        let sliderValue = oldRankValue;
+        oldRankValue = oldRankValue*10;
+        newRankString += "<input type='range' min='0' max='50' value='"+oldRankValue+"' id='newRankInput"+currentId+"'>";
+        newRankString += "<div id='rankValue"+currentId+"' class='rankValue' > </div>";
+        rankRef.innerHTML = newRankString;
+        const slider = document.querySelector("#newRankInput"+currentId);
+        const displaySliderValue = document.querySelector("#rankValue"+currentId);
+        displaySliderValue.innerHTML = oldRankValue/10;
+        slider.oninput = function() {
+          sliderValue = this.value;
+          sliderValue = sliderValue/10;
+          displaySliderValue.innerHTML = sliderValue;
+        }
+
+        const textLabel = document.querySelector("#textPostLabel"+currentId);
+        textLabel.innerHTML = "Edit your text:";
+        var newTextString;
+        var oldText = docSnap.data().text;
+        newTextString = "<textarea id='editTextArea"+currentId+"' class='editTextArea' maxlength='500'>"+oldText+"</textarea>";
+        textRef.innerHTML = newTextString;
+
+        const confirmChangesBtn = document.querySelector('#confirmChanges'+currentId);
+        confirmChangesBtn.addEventListener('click', async e => {
+          e.preventDefault();
+          let newTextContent = document.querySelector("#editTextArea"+currentId).value;
+          await updateDoc(postRef, {
+            rank: sliderValue,
+            text: newTextContent
+          })
+          alert("You have successfully editted your post.");
+          displayProfileSection(userId);
+        });
+        const cancelChangesBtn = document.querySelector('#cancel'+currentId);
+        cancelChangesBtn.addEventListener('click', async e => {
+          e.preventDefault();
+          displayProfileSection(userId);
+        });
       });
-    });
 
 
 
 
-    // handle delete button press  --------------------------------------------------------------------------------------
-    const deleteBtnId = "#deletePost"+currentId;
-    const deleteBtnRef = document.querySelector(deleteBtnId);
-    const deleteBtnContainer = document.querySelector("#deleteBtnContainer"+currentId);
-    deleteBtnRef.addEventListener('click', async e => {
-      e.preventDefault();
-      var deletePromptString = "";
-      deletePromptString += "Are you sure you want to delete this post?</br>";
-      deletePromptString += "<button id='sureDelete"+currentId+"'>Yes</button><button id='noDelete'>No</button>";
-      deleteBtnContainer.style = "background-color: #ffffff; border-style: solid;";
-      deleteBtnContainer.innerHTML = deletePromptString;
-      const sureDelete = document.querySelector("#sureDelete"+currentId);
-      const noDelete = document.querySelector("#noDelete");
-      sureDelete.addEventListener('click', async e => {
+      // handle delete button press  --------------------------------------------------------------------------------------
+      const deleteBtnId = "#deletePost"+currentId;
+      const deleteBtnRef = document.querySelector(deleteBtnId);
+      const deleteBtnContainer = document.querySelector("#deleteBtnContainer"+currentId);
+      deleteBtnRef.addEventListener('click', async e => {
         e.preventDefault();
-        let postSnap = await getDoc(doc(db, "posts", currentId));
-        let objectId = postSnap.data().objectId;
-        
-        let docSnap = await getDoc(doc(db, "objects", objectId));
-        let objectPostCount = docSnap.data().postCount;
-        let objectPostIds = docSnap.data().postIds;
-        let updatedIds = [];
-        for (let i = 0; i < objectPostIds.length; i++) {
-          if (objectPostIds[i] != currentUser.userEmail) {
-            updatedIds.push(objectPostIds[i]);
+        var deletePromptString = "";
+        deletePromptString += "Are you sure you want to delete this post?</br>";
+        deletePromptString += "<button id='sureDelete"+currentId+"'>Yes</button><button id='noDelete'>No</button>";
+        deleteBtnContainer.style = "background-color: #ffffff; border-style: solid;";
+        deleteBtnContainer.innerHTML = deletePromptString;
+        const sureDelete = document.querySelector("#sureDelete"+currentId);
+        const noDelete = document.querySelector("#noDelete");
+        sureDelete.addEventListener('click', async e => {
+          e.preventDefault();
+          let postSnap = await getDoc(doc(db, "posts", currentId));
+          let objectId = postSnap.data().objectId;
+          
+          let docSnap = await getDoc(doc(db, "objects", objectId));
+          let objectPostCount = docSnap.data().postCount;
+          let objectPostIds = docSnap.data().postIds;
+          let updatedIds = [];
+          for (let i = 0; i < objectPostIds.length; i++) {
+            if (objectPostIds[i] != currentUser.userEmail) {
+              updatedIds.push(objectPostIds[i]);
+            }
           }
-        }
-        objectPostCount = objectPostCount -1;
-        await updateDoc(doc(db,"objects", objectId), {
-          postIds: updatedIds,
-          postCount: objectPostCount
-        })
-        let userSnap = await getDoc(doc(db, "users", currentUser.userEmail));
-        let userPostCount = userSnap.data().postCount;
-        let userPostIds = userSnap.data().postIds;
-        let updatedUserPostIds = [];
-        for (let i = 0; i < userPostIds.length; i++) {
-          if (userPostIds[i] != currentId) {
-            updatedUserPostIds.push(userPostIds[i]);
+          objectPostCount = objectPostCount -1;
+          await updateDoc(doc(db,"objects", objectId), {
+            postIds: updatedIds,
+            postCount: objectPostCount
+          })
+          let userSnap = await getDoc(doc(db, "users", currentUser.userEmail));
+          let userPostCount = userSnap.data().postCount;
+          let userPostIds = userSnap.data().postIds;
+          let updatedUserPostIds = [];
+          for (let i = 0; i < userPostIds.length; i++) {
+            if (userPostIds[i] != currentId) {
+              updatedUserPostIds.push(userPostIds[i]);
+            }
           }
-        }
-        userPostCount = userPostCount -1;
-        await updateDoc(doc(db,"users", currentUser.userEmail), {
-          postIds: updatedUserPostIds,
-          postCount: userPostCount
+          userPostCount = userPostCount -1;
+          await updateDoc(doc(db,"users", currentUser.userEmail), {
+            postIds: updatedUserPostIds,
+            postCount: userPostCount
+          })
+          await deleteDoc(doc(db, "posts", currentId));
+          currentUser.postIds = updatedUserPostIds;
+          currentUser.postCount = userPostCount;
+          displayProfileSection(userId);
         })
-        await deleteDoc(doc(db, "posts", currentId));
-        currentUser.postIds = updatedUserPostIds;
-        currentUser.postCount = userPostCount;
-        displayProfileSection();
+        noDelete.addEventListener('click', async e => {
+          displayProfileSection(userId);
+        })
       })
-      noDelete.addEventListener('click', async e => {
-        displayProfileSection();
-      })
-    })
+    }
+  }
+  else {
+    let userRef = doc(db, "users", userId);
+    let userSnap = await getDoc(userRef);
+    let postIds = userSnap.data().postIds;
+    for (let i = 0; i < postIds.length; i++) {
+      let currentId = postIds[i];
+      let postRef = doc(db, "posts", currentId);
+      let docSnap = await getDoc(postRef);
+      // handle title anchor press  --------------------------------------------------------------------------------------
+      const currentObjectId = docSnap.data().objectId;
+      //console.log(currentObjectId);
+      const titleClickRef = document.querySelector("#titleValue"+currentObjectId);
+      
+      titleClickRef.addEventListener('click', async e => {
+        e.preventDefault();
+        displayObjectPopup(currentObjectId);
+      });
+    }
   }
 }
 //---------------------------------------------------------------------------------
@@ -664,7 +767,8 @@ async function displayObjectPopup(objectId) {
     rankTotals = rankTotals + doc.data().rank;
     postIds.push(doc.id);
   });
-  
+  let objectLinkIds = [];
+  let objectIds = [];
   const objectPostCount = docSnap.data().postCount;
   const averageRank = rankTotals/objectPostCount;
   const topDisplay = document.querySelector("#objectPopupTop");
@@ -688,7 +792,15 @@ async function displayObjectPopup(objectId) {
   topString += "<div class='titleValue'><strong>"+docSnap.data().name+"</strong>";
  
   if ((type == "Song") || (type == "Film") || (type == "Book")) {
-    topString += "</br>&nbsp;&nbsp;&nbsp;<a id='creator"+objectId+"' href='#'>"+docSnap.data().creator+"</a>";
+    const q = query(collection(db,"objects"), where("name", "==", docSnap.data().creator));
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      // doc.data() is never undefined for query doc snapshots
+      //console.log(doc.id, " => ", doc.data());
+      objectLinkIds.push("#creator"+doc.id);
+      objectIds.push(doc.id);
+      topString += "</br>&nbsp;&nbsp;&nbsp;<a id='creator"+doc.id+"' href='#'>"+docSnap.data().creator+"</a>";
+    });
   }
   else if ((type == "Band") || (type == "Artist") || (type == "Author") || (type == "Actor")) {
     topString += "&nbsp;&nbsp;&nbsp;<a href='#'></a>";
@@ -714,10 +826,21 @@ async function displayObjectPopup(objectId) {
   var bottomString;
   bottomString = "<h4>Top Posts for "+docSnap.data().name+"</h4>";
   bottomString += "<div id='objectPopupPosts'>";
+  var publisherLinkIds = [];
+  var publisherIds = [];
   for (let i = 0; i < postIds.length; i++) {
     var currentPostId = postIds[i];
     let postSnap = await getDoc(doc(db, "posts", currentPostId));
-    bottomString += "<div class='displayPublisherName' id='publisherName"+postSnap.data().publisher+"'>"+postSnap.data().publisherName+"</div>";
+    bottomString += "<div class='displayPublisherName'> <p class='profilePostLabel' style='display: inline; padding:0;'>User: </p>";
+    let notFixedUserId = postSnap.data().publisher;
+    let fixedId = fixUserEmail(notFixedUserId);
+    bottomString += "<a href='#'  id='publisherName"+fixedId+"' 'display: inline-block;'>"+postSnap.data().publisherName+"</a>";
+    let userSnap = await getDoc(doc(db, "users", postSnap.data().publisher));
+    bottomString += "&nbsp;&nbsp;&nbsp; <p class='profilePostLabel' style='display: inline; padding:0;'>Rep: </p>"+userSnap.data().reputation;
+    bottomString += "</div>";
+    
+    publisherLinkIds.push("#publisherName"+fixedId);
+    publisherIds.push(postSnap.data().publisher);
     bottomString += "<div id ='objectPost"+currentPostId+"' class='aPost'>";
       
 
@@ -743,10 +866,66 @@ async function displayObjectPopup(objectId) {
         bottomString += "</div>";
 
       
-    bottomString += "</div>"
+    
   }
   bottomString += "</div>";
   bottomDisplay.innerHTML = bottomString;
+  addListenersForObjectPage(objectLinkIds, objectIds, publisherLinkIds, publisherIds);
 }
 
+async function addListenersForObjectPage(objectLinkIds, objectIds, publisherLinkIds, publisherIds) {
+  for (let i=0; i<objectLinkIds.length; i++) {
+    addListenersForObjectPage2(objectIds[i], objectLinkIds[i]);
+  }
+  for (let i=0; i<publisherLinkIds.length; i++) {
+    addListenersForObjectPage3(publisherIds[i], publisherLinkIds[i]);
+  }
+}
 
+async function addListenersForObjectPage2(objectId, linkRef) {
+  var currentLinkRef = document.querySelector(linkRef);
+  currentLinkRef.addEventListener('click', async e => {
+    e.preventDefault();
+    for (var i = 0; i < sections.length; i++) {
+      sections[i].style.display = 'none';
+    }
+    for (var i = 0; i < navLabels.length; i++) {
+      navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
+    }
+    displayObjectPopup(objectId);
+  });
+}
+
+async function addListenersForObjectPage3(userId, linkRef) {
+  var currentLinkRef = document.querySelector(linkRef);
+  currentLinkRef.addEventListener('click', async e => {
+    e.preventDefault();
+    for (var i = 0; i < sections.length; i++) {
+      sections[i].style.display = 'none';
+    }
+    for (var i = 0; i < navLabels.length; i++) {
+      navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
+    }
+    //console.log("calling displayProfileSection(" +userId);
+    displayProfileSection(userId);
+  });
+}
+
+function fixUserEmail(notFixedUserId){ 
+  let fixedUserId = "";
+  let stringLen = notFixedUserId.length;
+  for (let i=0; i < stringLen; i++) {
+    let currentLetter = notFixedUserId[i];
+    if (currentLetter == "@") {
+      fixedUserId = fixedUserId + 'AT';
+    }
+    else if (currentLetter ==".") {
+      fixedUserId = fixedUserId + 'DOT';
+    }
+    else {
+      fixedUserId = fixedUserId + currentLetter;
+    }
+
+  }
+  return fixedUserId;
+}

@@ -156,10 +156,20 @@ input[type=submit]{
 .aPost{
   display: grid;
   grid-template-columns: 20% 80%;
-  margin-top: 1%;
+  margin-bottom: 1%;
   background-color: #ffffff;
-  border-radius: 10px;
+  border-radius: 0px 10px 10px 10px;
   height: max-content;
+}
+.displayPublisherName{
+  background-color: #ffffff;
+  text-align: left;
+  width: max-content;
+  border-radius: 10px 10px 0px 0px;
+  padding-left: 3%;
+  padding-right: 3%;
+  border-bottom-style:solid ;
+  border-bottom-width: .04rem;
 }
 .profilePostLabel{
   font-size: 1.3vw;
@@ -296,7 +306,7 @@ input[type=submit]{
 }
 #objectPopupPosts{
   display: grid;
-  grid-template-rows: 15% 25%;
+  grid-template-rows: max-content;
 }
 .objectPost {
   height: max-content;
