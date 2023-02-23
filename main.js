@@ -288,6 +288,8 @@ async function handlePostInput(name, type, objectId) {
           var objectCreator = docSnap.creator;
           var genre = docSnap.genre;
           var userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, name, type, genre);
+          var upVotesArray = [];
+          var downVotesArray = [];
           //console.log(userPost.text);
           alert("You have successfully published your post about: " + name);
           
@@ -302,7 +304,9 @@ async function handlePostInput(name, type, objectId) {
             genre: genre,
             upvotes: userPost.upvotes,
             downvotes: userPost.downvotes,
-            objectId: objectId
+            objectId: objectId,
+            upVotesArray: upVotesArray,
+            downVotesArray: downVotesArray
           });
           const newPostId = newPostRef.id;
           currentUser.postCount = currentUser.postCount+1;
@@ -317,7 +321,9 @@ async function handlePostInput(name, type, objectId) {
           var userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, name, type);
           //console.log(userPost.text);
           alert("You have successfully published your post about: " + name);
-          
+          var upVotesArray = [];
+          var downVotesArray = [];
+
           const newPostRef = await addDoc(collection(db, "posts"), {
             publisher: userPost.userEmail,
             publisherName: userPost.userName,
@@ -327,7 +333,9 @@ async function handlePostInput(name, type, objectId) {
             type: userPost.objectType,
             upvotes: userPost.upvotes,
             downvotes: userPost.downvotes,
-            objectId: objectId
+            objectId: objectId,
+            upVotesArray: upVotesArray,
+            downVotesArray: downVotesArray
           });
           const newPostId = newPostRef.id;
           currentUser.postCount = currentUser.postCount+1;
@@ -490,10 +498,6 @@ async function displayProfileSection(userId) {
     
 }
 
-
-
-
-
 async function displayProfilePosts(userId) {
   //console.log(currentUser.postIds);
   var profilePostsString = "";
@@ -530,7 +534,7 @@ async function displayProfilePosts(userId) {
                 profilePostsString += "<button class='voteArrowBtn' id = 'upVoteBtn"+currentId+"'> <img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIcon.png'> </button>";
                 profilePostsString += "<button class='voteArrowBtn' id = 'downVoteBtn"+currentId+"'> <img class='voteArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIcon.png'> </button>";
               profilePostsString += "</div>";
-            profilePostsString += "<div class='voteValue'>"+votes+"</div>";
+            profilePostsString += "<div class='voteValue' id='voteValue"+currentId+"'>"+votes+"</div>";
             profilePostsString += "</div></div>";
             profilePostsString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentId+"' class='textContainer'> <div id='"+currentId+"textValue' class='textValue'>";
             profilePostsString += docSnap.data().text+"</div></div></div>";
@@ -580,7 +584,7 @@ async function displayProfilePosts(userId) {
               profilePostsString += "<button class='voteArrowBtn' id = 'upVoteBtn"+currentId+"'> <img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIcon.png'> </button>";
               profilePostsString += "<button class='voteArrowBtn' id = 'downVoteBtn"+currentId+"'> <img class='voteArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIcon.png'> </button>";
             profilePostsString += "</div>";
-          profilePostsString += "<div class='voteValue'>"+votes+"</div>";
+          profilePostsString += "<div class='voteValue' id='voteValue"+currentId+"'>"+votes+"</div>";
           profilePostsString += "</div></div>";
           profilePostsString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentId+"' class='textContainer'> <div id='"+currentId+"textValue' class='textValue'>";
           profilePostsString += docSnap.data().text+"</div></div></div>";
@@ -604,6 +608,17 @@ async function addListenersForPosts(userId) {
       let currentId = currentUser.postIds[i];
       let postRef = doc(db, "posts", currentId);
       let docSnap = await getDoc(postRef);
+      // handle voteButton press  --------------------------------------------------------------------------------------
+      const upVoteRef = document.querySelector("#upVoteBtn"+currentId);
+      const downVoteRef = document.querySelector("#downVoteBtn"+currentId);
+      upVoteRef.addEventListener('click', async e => {
+        e.preventDefault();
+        handleVote("up", postRef, userId, currentId);
+      });
+      downVoteRef.addEventListener('click', async e => {
+        e.preventDefault();
+        handleVote("down", postRef, userId, currentId);
+      });
       // handle title anchor press  --------------------------------------------------------------------------------------
       const currentObjectId = docSnap.data().objectId;
       const titleClickRef = document.querySelector("#titleValue"+currentObjectId);
@@ -733,6 +748,17 @@ async function addListenersForPosts(userId) {
       let currentId = postIds[i];
       let postRef = doc(db, "posts", currentId);
       let docSnap = await getDoc(postRef);
+      // handle voteButton press  --------------------------------------------------------------------------------------
+      const upVoteRef = document.querySelector("#upVoteBtn"+currentId);
+      const downVoteRef = document.querySelector("#downVoteBtn"+currentId);
+      upVoteRef.addEventListener('click', async e => {
+        e.preventDefault();
+        handleVote("up", postRef, userId, currentId);
+      });
+      downVoteRef.addEventListener('click', async e => {
+        e.preventDefault();
+        handleVote("down", postRef, userId, currentId);
+      });
       // handle title anchor press  --------------------------------------------------------------------------------------
       const currentObjectId = docSnap.data().objectId;
       //console.log(currentObjectId);
@@ -744,6 +770,67 @@ async function addListenersForPosts(userId) {
       });
     }
   }
+}
+//---------------------------------------------------------------------------------
+async function handleVote(type, postRef, userId, currentId) {
+  let docSnap = await getDoc(postRef);
+  var upVoteArray = docSnap.data().upVotesArray;
+  var downVoteArray = docSnap.data().downVotesArray;
+  var upVotes = docSnap.data().upvotes;
+  var downVotes = docSnap.data().downvotes;
+  if (type == "up") {
+    if (upVoteArray.includes(userId)) {
+      alert("You have already up-voted this post.");
+    }
+    else {
+      if (downVoteArray.includes(userId)) {
+        var updatedDownVoteArray = [];
+        for (let i=0; i<downVoteArray.length; i++) {
+          if (downVoteArray[i] != userId) {
+            updatedDownVoteArray.push(downVoteArray[i]);
+          }
+        }
+        downVotes = downVotes - 1;
+      }
+      else updatedDownVoteArray = downVoteArray;
+      upVoteArray.push(userId);
+      upVotes = upVotes + 1;
+      await updateDoc(postRef, {
+        upvotes: upVotes,
+        downvotes: downVotes,
+        upVotesArray: upVoteArray,
+        downVotesArray: updatedDownVoteArray
+      });
+    }
+  }
+  else if (type == "down") {
+    if (downVoteArray.includes(userId)) {
+      alert("You have already down-voted this post.");
+    }
+    else {
+      if (upVoteArray.includes(userId)) {
+        var updatedUpVoteArray = [];
+        for (let i=0; i<upVoteArray.length; i++) {
+          if (upVoteArray[i] != userId) {
+            updatedUpVoteArray.push(upVoteArray[i]);
+          }
+        }
+        upVotes = upVotes - 1;
+      }
+      else updatedUpVoteArray = upVoteArray;
+      downVoteArray.push(userId);
+      downVotes = upVotes + 1;
+      await updateDoc(postRef, {
+        upvotes: upVotes,
+        downvotes: downVotes,
+        upVotesArray: updatedUpVoteArray,
+        downVotesArray: downVoteArray
+      });
+    }
+  }
+  const voteValueRef = document.querySelector("#voteValue"+currentId);
+  const voteValue = upVotes-downVotes;
+  voteValueRef.innerHTML = voteValue; 
 }
 //---------------------------------------------------------------------------------
 // display object popup section:
@@ -857,28 +944,45 @@ async function displayObjectPopup(objectId) {
             let upvotes = postSnap.data().upvotes;
             let downvotes = postSnap.data().downvotes;
             let votes = upvotes - downvotes;
-            bottomString += "<div id = 'rightPostContent'><div id = 'votesPostLabel"+currentPostId+"' class='profilePostLabel'>Votes:</div><div id='voteValue'>";
-            bottomString += votes+"</div></div>";
+            bottomString += "<div id = 'rightPostContent'><div id = 'votesPostLabel"+currentPostId+"' class='profilePostLabel'>Votes:</div>";
+            bottomString += "<div class='voteContainer'> <div class='voteButtonContainer'>";
+            bottomString += "<button class='voteArrowBtn' id = 'upVoteBtn"+currentPostId+"'> <img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIcon.png'> </button>";
+            bottomString += "<button class='voteArrowBtn' id = 'downVoteBtn"+currentPostId+"'> <img class='voteArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIcon.png'> </button>";
+            bottomString += "</div>"
+            bottomString += "<div id='voteValue"+currentPostId+"'>"+votes+"</div></div></div>";
             bottomString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentPostId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentPostId+"' class='textContainer'> <div id='"+currentPostId+"textValue' class='textValue'>";
             bottomString += postSnap.data().text+"</div></div></div>"; 
             bottomString += "</div>";
 
-        bottomString += "</div>";
-
-      
-    
+        bottomString += "</div>"; 
   }
   bottomString += "</div>";
   bottomDisplay.innerHTML = bottomString;
-  addListenersForObjectPage(objectLinkIds, objectIds, publisherLinkIds, publisherIds);
+  addListenersForObjectPage(objectLinkIds, objectIds, publisherLinkIds, publisherIds, postIds);
 }
 
-async function addListenersForObjectPage(objectLinkIds, objectIds, publisherLinkIds, publisherIds) {
+async function addListenersForObjectPage(objectLinkIds, objectIds, publisherLinkIds, publisherIds, postIds) {
   for (let i=0; i<objectLinkIds.length; i++) {
     addListenersForObjectPage2(objectIds[i], objectLinkIds[i]);
   }
   for (let i=0; i<publisherLinkIds.length; i++) {
     addListenersForObjectPage3(publisherIds[i], publisherLinkIds[i]);
+  }
+  // handle voteButton press  --------------------------------------------------------------------------------------
+  for (let i = 0; i<postIds.length; i++) {
+    var currentId = postIds[i];
+    const upVoteRef = document.querySelector("#upVoteBtn"+currentId);
+    const downVoteRef = document.querySelector("#downVoteBtn"+currentId);
+    let postRef = doc(db, "posts", currentId);
+    console.log(upVoteRef);
+    upVoteRef.addEventListener('click', async e => {
+      e.preventDefault();
+      handleVote("up", postRef, currentUser.userEmail, currentId);
+    });
+    downVoteRef.addEventListener('click', async e => {
+      e.preventDefault();
+      handleVote("down", postRef, currentUser.userEmail, currentId);
+    });
   }
 }
 
