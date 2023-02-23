@@ -611,13 +611,21 @@ async function addListenersForPosts(userId) {
       // handle voteButton press  --------------------------------------------------------------------------------------
       const upVoteRef = document.querySelector("#upVoteBtn"+currentId);
       const downVoteRef = document.querySelector("#downVoteBtn"+currentId);
+      var upVoteArray = docSnap.data().upVotesArray;
+      var downVoteArray = docSnap.data().downVotesArray;
+      if (upVoteArray.includes(userId)) {
+        upVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIconPressed.png'>";
+      }
+      else if (downVoteArray.includes(userId)) {
+        downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIconPressed.png'>";
+      }
       upVoteRef.addEventListener('click', async e => {
         e.preventDefault();
-        handleVote("up", postRef, userId, currentId);
+        handleVote("up", postRef, userId, currentId, upVoteRef, downVoteRef);
       });
       downVoteRef.addEventListener('click', async e => {
         e.preventDefault();
-        handleVote("down", postRef, userId, currentId);
+        handleVote("down", postRef, userId, currentId, upVoteRef, downVoteRef);
       });
       // handle title anchor press  --------------------------------------------------------------------------------------
       const currentObjectId = docSnap.data().objectId;
@@ -751,13 +759,21 @@ async function addListenersForPosts(userId) {
       // handle voteButton press  --------------------------------------------------------------------------------------
       const upVoteRef = document.querySelector("#upVoteBtn"+currentId);
       const downVoteRef = document.querySelector("#downVoteBtn"+currentId);
+      var upVoteArray = docSnap.data().upVotesArray;
+      var downVoteArray = docSnap.data().downVotesArray;
+      if (upVoteArray.includes(userId)) {
+        upVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIconPressed.png'>";
+      }
+      else if (downVoteArray.includes(userId)) {
+        downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIconPressed.png'>";
+      }
       upVoteRef.addEventListener('click', async e => {
         e.preventDefault();
-        handleVote("up", postRef, userId, currentId);
+        handleVote("up", postRef, userId, currentId, upVoteRef, downVoteRef);
       });
       downVoteRef.addEventListener('click', async e => {
         e.preventDefault();
-        handleVote("down", postRef, userId, currentId);
+        handleVote("down", postRef, userId, currentId, upVoteRef, downVoteRef);
       });
       // handle title anchor press  --------------------------------------------------------------------------------------
       const currentObjectId = docSnap.data().objectId;
@@ -772,7 +788,7 @@ async function addListenersForPosts(userId) {
   }
 }
 //---------------------------------------------------------------------------------
-async function handleVote(type, postRef, userId, currentId) {
+async function handleVote(type, postRef, userId, currentId, upVoteRef, downVoteRef) {
   let docSnap = await getDoc(postRef);
   var upVoteArray = docSnap.data().upVotesArray;
   var downVoteArray = docSnap.data().downVotesArray;
@@ -780,7 +796,18 @@ async function handleVote(type, postRef, userId, currentId) {
   var downVotes = docSnap.data().downvotes;
   if (type == "up") {
     if (upVoteArray.includes(userId)) {
-      alert("You have already up-voted this post.");
+      var updatedUpVoteArray = [];
+        for (let i=0; i<upVoteArray.length; i++) {
+          if (upVoteArray[i] != userId) {
+            updatedUpVoteArray.push(upVoteArray[i]);
+          }
+        }
+        upVotes = upVotes - 1;
+        await updateDoc(postRef, {
+          upvotes: upVotes,
+          upVotesArray: updatedUpVoteArray
+        });
+        upVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIcon.png'>";
     }
     else {
       if (downVoteArray.includes(userId)) {
@@ -801,11 +828,24 @@ async function handleVote(type, postRef, userId, currentId) {
         upVotesArray: upVoteArray,
         downVotesArray: updatedDownVoteArray
       });
+      upVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIconPressed.png'>";
+      downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIcon.png'>";
     }
   }
   else if (type == "down") {
     if (downVoteArray.includes(userId)) {
-      alert("You have already down-voted this post.");
+      var updatedDownVoteArray = [];
+        for (let i=0; i<downVoteArray.length; i++) {
+          if (downVoteArray[i] != userId) {
+            updatedDownVoteArray.push(upVoteArray[i]);
+          }
+        }
+        downVotes = downVotes - 1;
+        await updateDoc(postRef, {
+          downvotes: downVotes,
+          downVotesArray: updatedDownVoteArray
+        });
+        downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIcon.png'>";
     }
     else {
       if (upVoteArray.includes(userId)) {
@@ -826,6 +866,8 @@ async function handleVote(type, postRef, userId, currentId) {
         upVotesArray: updatedUpVoteArray,
         downVotesArray: downVoteArray
       });
+      upVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIcon.png'>";
+      downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIconPressed.png'>";
     }
   }
   const voteValueRef = document.querySelector("#voteValue"+currentId);
@@ -977,11 +1019,11 @@ async function addListenersForObjectPage(objectLinkIds, objectIds, publisherLink
     console.log(upVoteRef);
     upVoteRef.addEventListener('click', async e => {
       e.preventDefault();
-      handleVote("up", postRef, currentUser.userEmail, currentId);
+      handleVote("up", postRef, currentUser.userEmail, currentId, upVoteRef, downVoteRef);
     });
     downVoteRef.addEventListener('click', async e => {
       e.preventDefault();
-      handleVote("down", postRef, currentUser.userEmail, currentId);
+      handleVote("down", postRef, currentUser.userEmail, currentId, upVoteRef, downVoteRef);
     });
   }
 }
