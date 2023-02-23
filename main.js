@@ -899,7 +899,8 @@ async function displayObjectPopup(objectId) {
   let objectLinkIds = [];
   let objectIds = [];
   const objectPostCount = docSnap.data().postCount;
-  const averageRank = rankTotals/objectPostCount;
+  var averageRank = rankTotals/objectPostCount;
+  averageRank = averageRank.toFixed(1);
   const topDisplay = document.querySelector("#objectPopupTop");
   const bottomDisplay = document.querySelector("#objectPopupBottom");
   const type = docSnap.data().type;
@@ -1016,7 +1017,16 @@ async function addListenersForObjectPage(objectLinkIds, objectIds, publisherLink
     const upVoteRef = document.querySelector("#upVoteBtn"+currentId);
     const downVoteRef = document.querySelector("#downVoteBtn"+currentId);
     let postRef = doc(db, "posts", currentId);
-    console.log(upVoteRef);
+    let docSnap = await getDoc(postRef);
+    var upVoteArray = docSnap.data().upVotesArray;
+    var downVoteArray = docSnap.data().downVotesArray;
+    console.log(downVoteArray);
+    if (upVoteArray.includes(currentUser.userEmail)) {
+      upVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIconPressed.png'>";
+    }
+    else if (downVoteArray.includes(currentUser.userEmail)) {
+      downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIconPressed.png'>";
+    }
     upVoteRef.addEventListener('click', async e => {
       e.preventDefault();
       handleVote("up", postRef, currentUser.userEmail, currentId, upVoteRef, downVoteRef);
