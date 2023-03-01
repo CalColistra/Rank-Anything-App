@@ -160,7 +160,7 @@ async function displaySearchSection() {
     searchString += "<div></div>";
     searchString += "<input id='searchBar2' type='text'>";
     searchString += "<button id='searchButton'  class='smallEditBtn'>";
-    searchString += "<img id='searchIcon' src='img/searchIcon.png' alt=''> </button>";
+    searchString += "<img id='searchIcon' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/searchIcon.png' alt=''> </button>";
     searchString += "<div></div>";
   searchString += "</form>";
   searchString += "<div id='seachFilterContainer'>";
