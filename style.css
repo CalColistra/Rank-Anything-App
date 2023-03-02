@@ -446,7 +446,7 @@ h3{
 #seachFilterContainer{
   width: 100%;
   display: grid;
-  grid-template-columns: 20% 12% 12% 12% 12% 12% 20%;
+  grid-template-columns: 20% 10% 10% 10% 10% 10% 10% 20%;
   margin-top: 2%;
 }
 #searchResults2{

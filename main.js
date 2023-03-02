@@ -103,7 +103,8 @@ if (docSnap.exists()) {
       following: [],
       reputation: 0,
       postCount:0,
-      postIds:[]
+      postIds:[],
+      class: "user"
     });
   }
   displayUser.innerHTML = 'Signed in as: ' + currentUser.userName;
@@ -165,6 +166,7 @@ async function displaySearchSection() {
   searchString += "</form>";
   searchString += "<div id='seachFilterContainer'>";
     searchString += "<div></div>";
+    searchString += "<button class='searchFilter' id='searchForAll'>All</button>";
     searchString += "<button class='searchFilter' id='searchForUsers'>Users</button>";
     searchString += "<button class='searchFilter' id='searchForMusic'>Music</button>";
     searchString += "<button class='searchFilter' id='searchForFilm'>Film</button>";
@@ -185,6 +187,8 @@ async function displaySearchSection() {
     if (filterForUser == false) {
       filterForUser = true;
       userFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+      filterForAll = false;
+      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
     }
     else if (filterForUser == true) {
       filterForUser = false;
@@ -198,6 +202,8 @@ async function displaySearchSection() {
     if (filterForMusic == false) {
       filterForMusic = true;
       musicFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+      filterForAll = false;
+      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
     }
     else if (filterForMusic == true) {
       filterForMusic = false;
@@ -211,6 +217,8 @@ async function displaySearchSection() {
     if (filterForFilm == false) {
       filterForFilm = true;
       filmFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+      filterForAll = false;
+      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
     }
     else if (filterForFilm == true) {
       filterForFilm = false;
@@ -224,6 +232,8 @@ async function displaySearchSection() {
     if (filterForLocation == false) {
       filterForLocation = true;
       locationFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+      filterForAll = false;
+      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
     }
     else if (filterForLocation == true) {
       filterForLocation = false;
@@ -237,10 +247,37 @@ async function displaySearchSection() {
     if (filterForOther == false) {
       filterForOther = true;
       otherFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+      filterForAll = false;
+      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
     }
     else if (filterForOther == true) {
       filterForOther = false;
       otherFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+    }
+  });
+  const allFilter = document.querySelector('#searchForAll');
+  var filterForAll = true;
+  allFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+  allFilter.addEventListener('click', async e =>{
+    e.preventDefault();
+    if (filterForAll == false) {
+      filterForAll = true;
+      allFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+
+      filterForUser = false;
+      userFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+      filterForMusic = false;
+      musicFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+      filterForFilm = false;
+      filmFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+      filterForLocation = false;
+      locationFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+      filterForOther = false;
+      otherFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+    }
+    else if (filterForAll == true) {
+      filterForAll = false;
+      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
     }
   });
   
@@ -250,11 +287,11 @@ async function displaySearchSection() {
     const searchbar = document.querySelector('#searchBar2');
     const userInput = searchbar.value;
     e.preventDefault();
-    displaySearchResults(userInput, filterForUser, filterForMusic, filterForFilm, filterForLocation, filterForOther);
+    displaySearchResults(userInput, filterForUser, filterForMusic, filterForFilm, filterForLocation, filterForOther, filterForAll);
   });
 }
 
-async function displaySearchResults(input, filterForUser, filterForMusic, filterForFilm, filterForLocation, filterForOther) {
+async function displaySearchResults(input, filterForUser, filterForMusic, filterForFilm, filterForLocation, filterForOther, filterForAll) {
   const searchResultsSection = document.querySelector("#searchResults2");
   var resultString = "<div id = 'resultTitle'>Results:</div>";
   //------------------------------------
@@ -269,26 +306,136 @@ async function displaySearchResults(input, filterForUser, filterForMusic, filter
     matchingResults.push(doc.data());
     matchingIds.push(doc.id);
   });
+
+  const userQuery = query(collection(db,"users"), where("email", "==", input));
+  const userSnapshot = await getDocs(userQuery);
+  var userResults = [];
+  var userIds = [];
+  userSnapshot.forEach((doc) => {
+    // doc.data() is never undefined for query doc snapshots
+    //console.log(doc.id, " => ", doc.data());
+    userResults.push(doc.data());
+    userIds.push(doc.id);
+  });
+
+  let filteredResults = [];
+  let filteredIds = [];
   //------------------------------------
   //query for users:
+  if (filterForUser == true) {
+    for (let i =0; i<userResults.length; i++) {
+      filteredResults.push(userResults[i]);
+      filteredIds.push(userIds[i]);
+    }
+  }
+  //------------------------------------
+  //query for music:
+  if (filterForMusic == true) {
+    for (let i =0; i<matchingResults.length; i++) {
+      let objectClass = matchingResults[i].class;
+      if (objectClass == "music") {
+        filteredResults.push(matchingResults[i]);
+        filteredIds.push(matchingIds[i]);
+      }
+    }
+  }
+  //------------------------------------
+  //query for Film:
+  if (filterForFilm == true) {
+    for (let i =0; i<matchingResults.length; i++) {
+      let objectClass = matchingResults[i].class;
+      if (objectClass == "film") {
+        filteredResults.push(matchingResults[i]);
+        filteredIds.push(matchingIds[i]);
+      }
+    }
+  }
+  //------------------------------------
+  //query for location:
+  if (filterForLocation == true) {
+    for (let i =0; i<matchingResults.length; i++) {
+      let objectClass = matchingResults[i].class;
+      if (objectClass == "location") {
+        filteredResults.push(matchingResults[i]);
+        filteredIds.push(matchingIds[i]);
+      }
+    }
+  }
+  //------------------------------------
+  //query for other:
+  if (filterForOther == true) {
+    for (let i =0; i<matchingResults.length; i++) {
+      let objectClass = matchingResults[i].class;
+      if (objectClass == "other") {
+        filteredResults.push(matchingResults[i]);
+        filteredIds.push(matchingIds[i]);
+      }
+    }
+  }
   //------------------------------------ 
+  if (filterForAll == true) {
+    filteredResults = userResults;
+    filteredIds = userIds;
+    for (let i = 0; i<matchingResults.length; i++) {
+      filteredResults.push(matchingResults[i]);
+      filteredIds.push(matchingIds[i]);
+    }
+
+  }
   resultString += "<div id='searchResultContainer'>";
 
-  for (let i =0; i<matchingResults.length; i++) {
-    resultString += "<div id='result"+matchingIds[i]+"' class = 'searchResult'>";
+  for (let i =0; i<filteredResults.length; i++) {
+    if (filteredResults[i].class == "user") {
+      resultString += "<div id='result"+filteredIds[i]+"' class = 'searchResult'>";
       
-      resultString += "<div class='objectLabel'>Average Rank:</div><div class='objectLabel'>Title:</div><div class='objectLabel'>Posts:</div>";
-      let currentAv = matchingResults[i].averageRanks;
-      if (currentAv != 0) {
-        currentAv = currentAv.toFixed(1);
-      }
-      resultString += "<div class='averageRank'>"+currentAv+"</div>";
-      resultString += "<div class='titleValue'><a id='object"+matchingIds[i]+"' href='#'>"+matchingResults[i].name+"</a></div>";
-      resultString += "<div><strong>"+matchingResults[i].postCount+"</strong></div>";
-    resultString += "</div>";
+        resultString += "<div class='objectLabel'>Reputation:</div><div class='objectLabel'>Username:</div><div class='objectLabel'>Posts:</div>";
+        let currentRep = filteredResults[i].reputation;
+        
+        resultString += "<div class='averageRank'>"+currentRep+"</div>";
+        let fixedId = fixUserEmail(filteredIds[i]);
+        resultString += "<div class='titleValue'><a id='object"+fixedId+"' href='#'>"+filteredResults[i].userName+"</a></div>";
+        resultString += "<div><strong>"+filteredResults[i].postCount+"</strong></div>";
+
+      resultString += "</div>";
+    }
+    else {
+      resultString += "<div id='result"+filteredIds[i]+"' class = 'searchResult'>";
+      
+        resultString += "<div class='objectLabel'>Average Rank:</div><div class='objectLabel'>Title:</div><div class='objectLabel'>Posts:</div>";
+        let currentAv = filteredResults[i].averageRanks;
+        if (currentAv != 0) {
+          currentAv = currentAv.toFixed(1);
+        }
+        resultString += "<div class='averageRank'>"+currentAv+"</div>";
+        resultString += "<div class='titleValue'><a id='object"+filteredIds[i]+"' href='#'>"+filteredResults[i].name+"</a></div>";
+        resultString += "<div><strong>"+filteredResults[i].postCount+"</strong></div>";
+
+      resultString += "</div>";
+    }
+    
   }
   resultString += "</div>";
   searchResultsSection.innerHTML = resultString;
+  addListenersForSearchResults(filteredResults, filteredIds);
+}
+async function addListenersForSearchResults(filteredResults, filteredIds) {
+  for (let i =0; i<filteredResults.length; i++) {
+    if (filteredResults[i].class == "user") {
+      let fixedId = fixUserEmail(filteredIds[i]);
+      const userNameLinkRef = document.querySelector('#object'+fixedId);
+      userNameLinkRef.addEventListener('click', async e =>{
+        e.preventDefault();
+      displayProfileSection(filteredIds[i]);
+      });
+    }
+    else {
+      const objectLinkRef = document.querySelector('#object'+filteredIds[i]);
+      objectLinkRef.addEventListener('click', async e =>{
+        e.preventDefault();
+        displayObjectPopup(filteredIds[i]);
+      });
+    }
+  }
 }
 //-----------------------------------------------------------------------------------------------------------
 //home section:
@@ -558,6 +705,7 @@ const profileTitle = document.querySelector("#profileTitle");
 const postCount = document.querySelector("#postCount");
 const profilePosts = document.querySelector("#profilePosts");
 const editNameBtn = document.querySelector("#editName");
+const followBtn = document.querySelector("#followButton");
 
 
 profileBtn.addEventListener('click', () => {
@@ -586,6 +734,7 @@ async function displayProfileSection(userId) {
     profileSection.style.display="block";
     //console.log(userId, currentUser.userEmail);
     if (userId == currentUser.userEmail) {
+      followBtn.style.display = "none";
       profileTitle.innerHTML = "<h1>Your Profile</h1>";
       profileLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
       displayUsername.innerHTML = "<h2>"+currentUser.userName+"</h2>";
@@ -631,10 +780,23 @@ async function displayProfileSection(userId) {
       //console.log("in else");
       let userRef = doc(db, "users", userId);
       let userSnap = await getDoc(userRef);
-      profileTitle.innerHTML = "<h1>"+userSnap.data().userName+"'s Profile</h1>";
-      displayUsername.innerHTML = "<h2>"+userSnap.data().userName+"</h2>";
       let followers = userSnap.data().followers;
       let following = userSnap.data().following;
+      let isFollowing;
+      let followButtonContent;
+      if (followers.includes(currentUser.userEmail)) {
+        isFollowing = true;
+        followButtonContent = "<button id='followBtn'>Unfollow</button>";
+      }
+      else {
+        isFollowing = false;
+        followButtonContent = "<button id='followBtn'>Follow</button>";
+      }
+      followBtn.style.display = "block";
+      followBtn.innerHTML = followButtonContent;
+      addListenerForFollowBtn(isFollowing, userId, followBtn, followers, profileFollowers);
+      profileTitle.innerHTML = "<h1>"+userSnap.data().userName+"'s Profile</h1>";
+      displayUsername.innerHTML = "<h2>"+userSnap.data().userName+"</h2>";
       profileFollowers.innerHTML = "<h2>"+followers.length+"</h2>";
       profileFollowing.innerHTML = "<h2>"+following.length+"</h2>";
       profileReputation.innerHTML = "<h2>"+userSnap.data().reputation+"</h2>";
@@ -645,6 +807,50 @@ async function displayProfileSection(userId) {
     
 }
 
+async function addListenerForFollowBtn(isFollowing, userId, followBtn, followers, profileFollowers) {
+  followBtn.addEventListener('click', async e => {
+    e.preventDefault();
+    if (isFollowing==false) {
+      isFollowing = true;
+      followers.push(currentUser.userEmail);
+      await updateDoc(doc(db,"users", userId), {
+        followers: arrayUnion(currentUser.userEmail)
+      });
+      if (!(currentUser.following.includes(userId))) currentUser.following.push(userId);
+      
+      await updateDoc(doc(db,"users", currentUser.userEmail), {
+        following: arrayUnion(userId)
+      });
+      followBtn.innerHTML = "<button id='followBtn'>Unfollow</button>";
+    }
+    else {
+      isFollowing = false;
+      let fixedFollowers = [];
+      for (let i=0; i<followers.length; i++) {
+        if (followers[i] != currentUser.userEmail) {
+          fixedFollowers.push(followers[i]);
+        }
+      }
+      await updateDoc(doc(db,"users", userId), {
+        followers: fixedFollowers
+      });
+      let fixedUserFollowers = [];
+      for (let i=0; i<currentUser.following.length; i++) {
+        if (currentUser.following[i] != userId) {
+          fixedUserFollowers.push(currentUser.following[i]);
+        }
+      }
+      currentUser.following = fixedUserFollowers;
+      await updateDoc(doc(db,"users", currentUser.userEmail), {
+        following: fixedUserFollowers
+      });
+      followBtn.innerHTML = "<button id='followBtn'>Follow</button>";
+      followers = fixedFollowers;
+    }
+    //console.log(currentUser.following);
+    profileFollowers.innerHTML = "<h2>"+followers.length+"</h2>";
+  });
+}
 async function displayProfilePosts(userId) {
   //console.log(currentUser.postIds);
   var profilePostsString = "";
