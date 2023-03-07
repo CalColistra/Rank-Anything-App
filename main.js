@@ -115,19 +115,19 @@ if (docSnap.exists()) {
 //handle nav bar buttons:
 const homeBtn = document.querySelector('#homeBtn');
 const homeSection = document.querySelector('#home');
-const homeLabel = document.querySelector('#homeLabel');
+const homeLabel = document.querySelector('#homeNavLabel');
 
 const discoverBtn = document.querySelector('#discoverBtn');
 const discoverSection = document.querySelector('#discover');
-const discoverLabel = document.querySelector('#discoverLabel');
+const discoverLabel = document.querySelector('#discoverNavLabel');
 
 const searchBtn = document.querySelector('#searchBtn');
 const searchSection = document.querySelector('#search');
-const searchLabel = document.querySelector('#searchLabel');
+const searchLabel = document.querySelector('#searchNavLabel');
 
 const rankBtn = document.querySelector('#rankBtn');
 const rankSection = document.querySelector('#rank');
-const rankLabel = document.querySelector('#rankLabel');
+const rankLabel = document.querySelector('#rankNavLabel');
 
 const profileBtn = document.querySelector('#profileBtn');
 const profileSection = document.querySelector('#profile');
@@ -136,6 +136,76 @@ const profileLabel = document.querySelector('#profileNavLabel');
 const sections = document.getElementsByClassName('section');
 const navLabels = document.getElementsByClassName('navLabel');
 //-----------------------------------------------------------------------------------------------------------
+//display section function:
+async function displaySection(id) {
+  if (signedIn==false) {
+    alert("Please sign in with google.");
+  }
+  else {
+    for (var i = 0; i < sections.length; i++) {
+      sections[i].style.display = 'none';
+      sections[i].innerHTML = "";
+    }
+    for (var i = 0; i < navLabels.length; i++) {
+      navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
+    }
+    var currentSection = document.querySelector("#"+id);
+    currentSection.style.display="block";
+    if (id != "objectPopup") {
+      var currentNavLabel = document.querySelector("#"+id+"NavLabel");
+      currentNavLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+    }
+    var htmlString;
+    if (id == "home") {
+      htmlString = "<div class='jumbotron text-center' style='margin-bottom:0'><h1>Home Page</h1></div>";
+      currentSection.innerHTML = htmlString;
+    }
+    else if (id == "discover") {
+      htmlString = "<div class='jumbotron text-center' style='margin-bottom:0'> <h1>Explore</h1></div>";
+      currentSection.innerHTML = htmlString;
+    }
+    else if (id == "search") {
+     htmlString = "<div class='jumbotron text-center' style='margin-bottom:0'><h1>Search</h1></div>";
+     htmlString += "<div id='searchContainer'></div>";
+     currentSection.innerHTML = htmlString;
+    }
+    else if (id == "rank") {
+      htmlString = "<div id='rankContainer'><div id='leftSearch'>";
+      htmlString += "<div id='rankSearchTitle' class='jumbotron text-center' style='margin-bottom:0'>";
+      htmlString += "<h1>Search</h1><form id='searchBarContainer'>";
+      htmlString += "<input id='searchBar' type='text'> <button id='searchButton'  class='smallEditBtn'>";
+      htmlString += "<img id='searchIcon' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/searchIcon.png' alt=''></button></form>";
+      htmlString += "<div id='searchResults'></div></div></div>";
+      htmlString += "<div id='rightCreate'><div id='rankSearchTitle' class='jumbotron text-center' style='margin-bottom:0'>";   
+      htmlString += "<h1>Create a post</h1> </div><form id='postForm'>  &#8592; Find something to rank using the search bar on the left.";
+      htmlString += "</form></div> </div>";
+      currentSection.innerHTML = htmlString;
+     }
+     else if (id == "profile") {
+      htmlString = "<div class='jumbotron text-center' style='margin-bottom:0' id='profileTitle'></div>";
+      htmlString += "<div class='profileDisplay'>";
+      htmlString += "<div class='profileLabel'>Username:</div>";
+      htmlString += "<div class='profileLabel'>Posts:</div><div class='profileLabel'>Followers:</div>";
+      htmlString += "<div class='profileLabel'>Following:</div><div class='profileLabel'>Reputation:</div>";
+      htmlString += "<div id='profileName'><div id = 'displayUsername'></div> ";
+      htmlString +=  "<div id = 'displayUsername'></div><div id = 'displayUsername'></div>";
+      htmlString += "<button id='editName' class='smallEditBtn'><img id='editIcon' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/editIcon.png'>Edit</button>";
+      htmlString += "<div id='editNameForm'></div></div>";
+      htmlString += "<div id='postCount'></div><div id='profileFollowers'></div> <div id='profileFollowing'></div>"; 
+      htmlString += "<div id='profileReputation'></div><div id='followButton'></div>  </div>"; 
+      htmlString += "<div class='jumbotron text-center' style='margin-bottom:0' id='profileTitle'>Top Posts</div>"; 
+      htmlString += "<div id='profilePosts'></div>";
+      currentSection.innerHTML = htmlString;
+     }
+     else if (id == "objectPopup") {
+      htmlString = "<div id='objectPopupContainer'> <div id='objectPopupTop'></div>";
+      htmlString += "<div id='objectPopupBottom'> </div> </div>";
+      currentSection.innerHTML = htmlString;
+     }
+  }
+}
+
+//-----------------------------------------------------------------------------------------------------------
 //Search section:
 searchBtn.addEventListener('click', async e => {
   e.preventDefault();
@@ -143,18 +213,11 @@ searchBtn.addEventListener('click', async e => {
     alert("Please sign in with google.");
   }
   else {
+    displaySection("search");
     displaySearchSection();
   }
 });
 async function displaySearchSection() {
-  for (var i = 0; i < sections.length; i++) {
-    sections[i].style.display = 'none';
-  }
-  for (var i = 0; i < navLabels.length; i++) {
-    navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
-  }
-  searchSection.style.display="block";
-  searchLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
   const searchContainer = document.querySelector("#searchContainer");
   var searchString = "";
   searchString += "<form id='searchBarContainer2'>";
@@ -442,16 +505,7 @@ async function addListenersForSearchResults(filteredResults, filteredIds) {
 homeSection.style.display="block";
 homeLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
 
-async function displayHomeSection(){
-  for (var i = 0; i < sections.length; i++) {
-    sections[i].style.display = 'none';
-  }
-  for (var i = 0; i < navLabels.length; i++) {
-    navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
-  }
-  homeSection.style.display="block";
-  homeLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-}
+
 
 homeBtn.addEventListener('click', async e => {
   e.preventDefault();
@@ -459,7 +513,7 @@ homeBtn.addEventListener('click', async e => {
     alert("Please sign in with google.");
   }
   else {
-    displayHomeSection();
+    displaySection("home");
   }
 })
 //-----------------------------------------------------------------------------------------------------------
@@ -470,7 +524,7 @@ rankBtn.addEventListener('click', async e => {
     alert("Please sign in with google.");
   }
   else {
-    displayPostSection();
+    displaySection("rank");
     const postSearchBarForm = document.querySelector("#searchBarContainer");
     const searchResults = document.querySelector("#searchResults");
     const searchBarInput = document.querySelector("#searchBar");
@@ -665,17 +719,6 @@ async function handlePostInput(name, type, objectId) {
   })
 }
 
-async function displayPostSection(){
-  for (var i = 0; i < sections.length; i++) {
-    sections[i].style.display = 'none';
-  }
-  for (var i = 0; i < navLabels.length; i++) {
-    navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
-  }
-  rankSection.style.display="block";
-  rankLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-}
-
 //-----------------------------------------------------------------------------------------------------------
 //explore section:
 discoverBtn.addEventListener('click', () => {
@@ -683,29 +726,13 @@ discoverBtn.addEventListener('click', () => {
     alert("Please sign in with google.");
   }
   else {
-    for (var i = 0; i < sections.length; i++) {
-      sections[i].style.display = 'none';
-    }
-    for (var i = 0; i < navLabels.length; i++) {
-      navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
-    }
-    discoverSection.style.display="block";
-    discoverLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+    displaySection("discover");
   }
 })
 
 //-----------------------------------------------------------------------------------------------------------
 //Profile section:
-const displayUsername = document.querySelector("#displayUsername");
-const editNameForm = document.querySelector("#editNameForm");
-const profileFollowing = document.querySelector("#profileFollowing");
-const profileFollowers = document.querySelector("#profileFollowers");
-const profileReputation = document.querySelector("#profileReputation");
-const profileTitle = document.querySelector("#profileTitle");
-const postCount = document.querySelector("#postCount");
-const profilePosts = document.querySelector("#profilePosts");
-const editNameBtn = document.querySelector("#editName");
-const followBtn = document.querySelector("#followButton");
+
 
 
 profileBtn.addEventListener('click', () => {
@@ -713,23 +740,22 @@ profileBtn.addEventListener('click', () => {
     alert("Please sign in with google.");
   }
   else {
-    for (var i = 0; i < sections.length; i++) {
-      sections[i].style.display = 'none';
-    }
-    for (var i = 0; i < navLabels.length; i++) {
-      navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
-    }
     displayProfileSection(currentUser.userEmail);
   }
 })
 
 async function displayProfileSection(userId) {
-  for (var i = 0; i < sections.length; i++) {
-    sections[i].style.display = 'none';
-  }
-  for (var i = 0; i < navLabels.length; i++) {
-    navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
-  }
+    displaySection("profile");
+    const displayUsername = document.querySelector("#displayUsername");
+    const editNameForm = document.querySelector("#editNameForm");
+    const profileFollowing = document.querySelector("#profileFollowing");
+    const profileFollowers = document.querySelector("#profileFollowers");
+    const profileReputation = document.querySelector("#profileReputation");
+    const profileTitle = document.querySelector("#profileTitle");
+    const postCount = document.querySelector("#postCount");
+    const profilePosts = document.querySelector("#profilePosts");
+    const editNameBtn = document.querySelector("#editName");
+    const followBtn = document.querySelector("#followButton");
     editNameForm.innerHTML ="";
     profileSection.style.display="block";
     //console.log(userId, currentUser.userEmail);
@@ -972,14 +998,7 @@ async function addListenersForPosts(userId) {
       else if (downVoteArray.includes(userId)) {
         downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIconPressed.png'>";
       }
-      upVoteRef.addEventListener('click', async e => {
-        e.preventDefault();
-        handleVote("up", postRef, userId, currentId, upVoteRef, downVoteRef);
-      });
-      downVoteRef.addEventListener('click', async e => {
-        e.preventDefault();
-        handleVote("down", postRef, userId, currentId, upVoteRef, downVoteRef);
-      });
+      await addVoteListeners(upVoteRef, downVoteRef, postRef, currentId);
       // handle title anchor press  --------------------------------------------------------------------------------------
       const currentObjectId = docSnap.data().objectId;
       const titleClickRef = document.querySelector("#titleValue"+currentObjectId);
@@ -1141,20 +1160,13 @@ async function addListenersForPosts(userId) {
       const downVoteRef = document.querySelector("#downVoteBtn"+currentId);
       var upVoteArray = docSnap.data().upVotesArray;
       var downVoteArray = docSnap.data().downVotesArray;
-      if (upVoteArray.includes(userId)) {
+      if (upVoteArray.includes(currentUser.userEmail)) {
         upVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIconPressed.png'>";
       }
-      else if (downVoteArray.includes(userId)) {
+      else if (downVoteArray.includes(currentUser.userEmail)) {
         downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIconPressed.png'>";
       }
-      upVoteRef.addEventListener('click', async e => {
-        e.preventDefault();
-        handleVote("up", postRef, userId, currentId, upVoteRef, downVoteRef);
-      });
-      downVoteRef.addEventListener('click', async e => {
-        e.preventDefault();
-        handleVote("down", postRef, userId, currentId, upVoteRef, downVoteRef);
-      });
+      await addVoteListeners(upVoteRef, downVoteRef, postRef, currentId);
       // handle title anchor press  --------------------------------------------------------------------------------------
       const currentObjectId = docSnap.data().objectId;
       //console.log(currentObjectId);
@@ -1174,6 +1186,10 @@ async function handleVote(type, postRef, userId, currentId, upVoteRef, downVoteR
   var downVoteArray = docSnap.data().downVotesArray;
   var upVotes = docSnap.data().upvotes;
   var downVotes = docSnap.data().downvotes;
+  var postPublisher = docSnap.data().publisher;
+  var userRef = doc(db, "users", postPublisher);
+  var publisherSnap = await getDoc(userRef);
+  var publisherRep = publisherSnap.data().reputation;
   if (type == "up") {
     if (upVoteArray.includes(userId)) {
       var updatedUpVoteArray = [];
@@ -1186,6 +1202,11 @@ async function handleVote(type, postRef, userId, currentId, upVoteRef, downVoteR
         await updateDoc(postRef, {
           upvotes: upVotes,
           upVotesArray: updatedUpVoteArray
+        });
+        publisherRep = publisherRep - 1;
+        if (postPublisher == currentUser.userEmail) currentUser.reputation =  publisherRep;
+        await updateDoc(userRef, {
+          reputation: publisherRep
         });
         upVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIcon.png'>";
     }
@@ -1207,6 +1228,11 @@ async function handleVote(type, postRef, userId, currentId, upVoteRef, downVoteR
         downvotes: downVotes,
         upVotesArray: upVoteArray,
         downVotesArray: updatedDownVoteArray
+      });
+      publisherRep = publisherRep + 1;
+      if (postPublisher == currentUser.userEmail) currentUser.reputation =  publisherRep;
+      await updateDoc(userRef, {
+        reputation: publisherRep
       });
       upVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIconPressed.png'>";
       downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIcon.png'>";
@@ -1236,10 +1262,15 @@ async function handleVote(type, postRef, userId, currentId, upVoteRef, downVoteR
           }
         }
         upVotes = upVotes - 1;
+        publisherRep = publisherRep - 1;
+        if (postPublisher == currentUser.userEmail) currentUser.reputation =  publisherRep;
+        await updateDoc(userRef, {
+          reputation: publisherRep
+        });
       }
       else updatedUpVoteArray = upVoteArray;
       downVoteArray.push(userId);
-      downVotes = upVotes + 1;
+      downVotes = downVotes + 1;
       await updateDoc(postRef, {
         upvotes: upVotes,
         downvotes: downVotes,
@@ -1250,21 +1281,17 @@ async function handleVote(type, postRef, userId, currentId, upVoteRef, downVoteR
       downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIconPressed.png'>";
     }
   }
-  const voteValueRef = document.querySelector("#voteValue"+currentId);
-  const voteValue = upVotes-downVotes;
+  var voteValueRef = document.querySelector("#voteValue"+currentId);
+  var voteValue = upVotes-downVotes;
+  //console.log(voteValueRef);
+  //console.log(upVotes + " - " +downVotes);
   voteValueRef.innerHTML = voteValue; 
 }
 //---------------------------------------------------------------------------------
 // display object popup section:
-const objectPopupRef = document.querySelector("#objectPopup");
+
 async function displayObjectPopup(objectId) {
-  for (var i = 0; i < sections.length; i++) {
-    sections[i].style.display = 'none';
-  }
-  for (var i = 0; i < navLabels.length; i++) {
-    navLabels[i].style = 'text-decoration-line: none; text-decoration-style: none;';
-  }
-  objectPopupRef.style.display="block";
+  displaySection("objectPopup");
   let docSnap = await getDoc(doc(db, "objects", objectId));
   const q = query(collection(db,"posts"), where("objectId", "==", objectId));
   const querySnapshot = await getDocs(q);
@@ -1394,8 +1421,10 @@ async function addListenersForObjectPage(objectLinkIds, objectIds, publisherLink
   // handle voteButton press  --------------------------------------------------------------------------------------
   for (let i = 0; i<postIds.length; i++) {
     var currentId = postIds[i];
-    const upVoteRef = document.querySelector("#upVoteBtn"+currentId);
-    const downVoteRef = document.querySelector("#downVoteBtn"+currentId);
+    //console.log(currentId);
+    var upVoteRef = document.querySelector("#upVoteBtn"+currentId);
+    //console.log(upVoteRef);
+    var downVoteRef = document.querySelector("#downVoteBtn"+currentId);
     let postRef = doc(db, "posts", currentId);
     let docSnap = await getDoc(postRef);
     var upVoteArray = docSnap.data().upVotesArray;
@@ -1407,16 +1436,21 @@ async function addListenersForObjectPage(objectLinkIds, objectIds, publisherLink
     else if (downVoteArray.includes(currentUser.userEmail)) {
       downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIconPressed.png'>";
     }
-    upVoteRef.addEventListener('click', async e => {
-      e.preventDefault();
-      handleVote("up", postRef, currentUser.userEmail, currentId, upVoteRef, downVoteRef);
-    });
-    downVoteRef.addEventListener('click', async e => {
-      e.preventDefault();
-      handleVote("down", postRef, currentUser.userEmail, currentId, upVoteRef, downVoteRef);
-    });
+    await addVoteListeners(upVoteRef, downVoteRef, postRef, currentId);
   }
 }
+
+async function addVoteListeners(upVoteRef, downVoteRef, postRef, currentId) {
+  upVoteRef.addEventListener('click', async e => {
+    e.preventDefault();
+    handleVote("up", postRef, currentUser.userEmail, currentId, upVoteRef, downVoteRef);
+  });
+  downVoteRef.addEventListener('click', async e => {
+    e.preventDefault();
+    handleVote("down", postRef, currentUser.userEmail, currentId, upVoteRef, downVoteRef);
+  });
+}
+
 
 async function addListenersForObjectPage2(objectId, linkRef) {
   var currentLinkRef = document.querySelector(linkRef);

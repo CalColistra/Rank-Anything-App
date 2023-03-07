@@ -248,6 +248,7 @@ input[type=submit]{
   border-bottom-style: solid;
   border-color: #282828;
   border-width: 1px;
+  padding-left: 3%;
 }
 .editTextArea{
   width: 90%;
