@@ -637,12 +637,12 @@ async function handlePostInput(name, type, objectId) {
         alert("You have already made a post for " + name);
       }
       else {
-        
+        var userPost
         if ((type == "Song") || (type == "Book") || (type == "Film")) {
           var userText = textArea.value;
           var objectCreator = docSnap.creator;
           var genre = docSnap.genre;
-          var userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, name, type, genre);
+          userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, name, type, genre);
           var upVotesArray = [];
           var downVotesArray = [];
           //console.log(userPost.text);
@@ -671,13 +671,14 @@ async function handlePostInput(name, type, objectId) {
             postIds: arrayUnion(newPostId)
           })
         }
-        else if ((type == "Band") || (type == "Artist") || (type == "Author") || (type == "Actor")) {
+        else if ((type == "artist") || (type == "Author") || (type == "Actor")) {
           var userText = textArea.value;
-          var userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, name, type);
+          userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, name, type);
           //console.log(userPost.text);
           alert("You have successfully published your post about: " + name);
           var upVotesArray = [];
           var downVotesArray = [];
+          
 
           const newPostRef = await addDoc(collection(db, "posts"), {
             publisher: userPost.userEmail,
@@ -898,7 +899,7 @@ async function displayProfilePosts(userId) {
           profilePostsString += docSnap.data().objectName+" by "+docSnap.data().objectCreator;
           profilePostsString += "</a></div>";
         }
-        else if ((objectType == "Band") ||(objectType == "Artist") || (objectType == "Author") || (objectType == "Actor")) {
+        else if ((objectType == "artist") || (objectType == "Author") || (objectType == "Actor")) {
           profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
           profilePostsString += docSnap.data().objectName;
           profilePostsString += "</a></div>";
@@ -948,7 +949,7 @@ async function displayProfilePosts(userId) {
           profilePostsString += docSnap.data().objectName+" by "+docSnap.data().objectCreator;
           profilePostsString += "</a></div>";
         }
-        else if ((objectType == "Band") ||(objectType == "Artist") || (objectType == "Author") || (objectType == "Actor")) {
+        else if ((objectType == "Band") ||(objectType == "artist") || (objectType == "Author") || (objectType == "Actor")) {
           profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
           profilePostsString += docSnap.data().objectName;
           profilePostsString += "</a></div>";
@@ -1319,11 +1320,8 @@ async function displayObjectPopup(objectId) {
   if ((type == "Song") || (type == "Film") || (type == "Book")) {
     topString += "<div class='objectLabel'>Release Date:</div>";
   }
-  else if ((type == "Band")) {
-    topString += "<div class='objectLabel'>Established:</div>";
-  }
-  else if ((type == "Artist") || (type == "Author") || (type == "Actor")) {
-    topString += "<div class='objectLabel'>Born:</div>";
+  else if ((type == "artist")) {
+    topString += "<div class='objectLabel'><strong><a href='"+docSnap.data().spotifyLink+"' target='_blank'>Listen on Spotify</a></strong></div>";
   }
  
   topString += "<div class='titleValue'><strong>"+docSnap.data().name+"</strong>";
@@ -1339,7 +1337,7 @@ async function displayObjectPopup(objectId) {
       topString += "</br>&nbsp;&nbsp;&nbsp;<a id='creator"+doc.id+"' href='#'>"+docSnap.data().creator+"</a>";
     });
   }
-  else if ((type == "Band") || (type == "Artist") || (type == "Author") || (type == "Actor")) {
+  else if ((type == "Band") || (type == "artist") || (type == "Author") || (type == "Actor")) {
     topString += "&nbsp;&nbsp;&nbsp;<a href='#'></a>";
   }
   topString += "</div>";
@@ -1349,8 +1347,8 @@ async function displayObjectPopup(objectId) {
   else if ((type == "Band")) {
     topString += "<div><strong>"+docSnap.data().established+"</strong></br>";
   }
-  else if ( (type == "Artist") || (type == "Author") || (type == "Actor")) {
-    topString += "<div><strong>"+docSnap.data().born+"</strong></br>";
+  else if ( (type == "artist")) {
+    topString += "<div class='objectLabel' >Spotify Followers:</br>"+docSnap.data().spotifyFollowers+"</br>";
   }
  
  
