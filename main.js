@@ -3,7 +3,7 @@ import './style.css'
 import { app as firebase } from './javaScript/firebase-config'
 
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, setDoc, doc, getDoc, getDocs, addDoc, updateDoc, collection, query, where, arrayUnion, deleteDoc } from 'firebase/firestore'
+import { getFirestore, setDoc, doc, getDoc, getDocs, addDoc, updateDoc, collection, query, where, arrayUnion, deleteDoc, orderBy, limit } from 'firebase/firestore'
 import { async } from '@firebase/util';
 
 //---------------------------------------------------------------------------------
@@ -25,7 +25,7 @@ class User {
 
 //post class:
 class Post {
-  constructor(userEmail, userName, rank, text, objectName, objectType) {
+  constructor(userEmail, userName, rank, text, objectName, objectType, postDate) {
     this.userEmail = userEmail;
     this.userName = userName;
     this.rank = rank;
@@ -34,6 +34,7 @@ class Post {
     this.downvotes = 0;
     this.objectName = objectName;
     this.objectType = objectType;
+    this.postDate = postDate;
   }
 }
 
@@ -54,7 +55,7 @@ loginBtn.addEventListener('click', async e => {
 
 logoutBtn.addEventListener('click', async e => {
   e.preventDefault();
-  displayHomeSection();
+  displaySection("home");
   currentUser = null;
   signOut(auth).then(() => {
       logoutBtn.classList.remove('show');
@@ -225,151 +226,162 @@ async function displaySearchSection() {
     searchString += "<input id='searchBar2' type='text'>";
     searchString += "<button id='searchButton'  class='smallEditBtn'>";
     searchString += "<img id='searchIcon' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/searchIcon.png' alt=''> </button>";
+    
     searchString += "<div></div>";
   searchString += "</form>";
-  searchString += "<div id='seachFilterContainer'>";
+  searchString += "<div id='searchFilterContainer'>";
     searchString += "<div></div>";
-    searchString += "<button class='searchFilter' id='searchForAll'>All</button>";
+    searchString += "<button class='searchFilter' id='searchForArtists'>Artists</button>";
+    searchString += "<button class='searchFilter' id='searchForSongs'>Songs</button>";
+    searchString += "<button class='searchFilter' id='searchForAlbums'>Albums</button>";
     searchString += "<button class='searchFilter' id='searchForUsers'>Users</button>";
-    searchString += "<button class='searchFilter' id='searchForMusic'>Music</button>";
-    searchString += "<button class='searchFilter' id='searchForFilm'>Film</button>";
-    searchString += "<button class='searchFilter' id='searchForLocation'>Locations</button>";
-    searchString += "<button class='searchFilter' id='searchForOther'>Other</button>";
     searchString += "<div></div>";
+    
   searchString += "</div>";
+  searchString += "</br><p class='alert' id='noFilterAlert'>** You must choose a filter to search ** </p>";
   searchString += "<div id='searchResults2'>";
 
   searchString += "</div>";
   searchContainer.innerHTML = searchString;
   //filter listeners:
   //const filters = document.getElementsByClassName('searchFilter');
+  var filterChoice;
   const userFilter = document.querySelector('#searchForUsers');
+  const artistFilter = document.querySelector('#searchForArtists');
+  const albumFilter = document.querySelector('#searchForAlbums');
+  const songFilter = document.querySelector('#searchForSongs');
+  var filterElements = [userFilter,artistFilter,albumFilter,songFilter];
   var filterForUser = false;
   userFilter.addEventListener('click', async e =>{
     e.preventDefault();
     if (filterForUser == false) {
       filterForUser = true;
       userFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-      filterForAll = false;
-      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+      filterChoice = 'users';
+      for (let element = 0; element < filterElements.length; element++) {
+        let currentElement = filterElements[element];
+        if (currentElement != userFilter) {
+          currentElement.style = 'text-decoration-line: none; text-decoration-style: none;';
+        }
+      }
+      alertFilterMsg.style.display = 'none';
     }
     else if (filterForUser == true) {
       filterForUser = false;
       userFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+      filterChoice = null;
+      alertFilterMsg.style.display = 'block';
     }
   });
-  const musicFilter = document.querySelector('#searchForMusic');
-  var filterForMusic = false;
-  musicFilter.addEventListener('click', async e =>{
+ 
+  var filterForArtist = false;
+  artistFilter.addEventListener('click', async e =>{
     e.preventDefault();
-    if (filterForMusic == false) {
-      filterForMusic = true;
-      musicFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-      filterForAll = false;
-      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+    if (filterForArtist == false) {
+      filterForArtist = true;
+      artistFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+      filterChoice = 'artist';
+      for (let element = 0; element < filterElements.length; element++) {
+        let currentElement = filterElements[element];
+        if (currentElement != artistFilter) {
+          currentElement.style = 'text-decoration-line: none; text-decoration-style: none;';
+        }
+      }
+      alertFilterMsg.style.display = 'none';
     }
-    else if (filterForMusic == true) {
-      filterForMusic = false;
-      musicFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+    else if (filterForArtist == true) {
+      filterForArtist = false;
+      artistFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+      filterChoice = null;
+      alertFilterMsg.style.display = 'block';
     }
   });
-  const filmFilter = document.querySelector('#searchForFilm');
-  var filterForFilm = false;
-  filmFilter.addEventListener('click', async e =>{
+ 
+  var filterForAlbums = false;
+  albumFilter.addEventListener('click', async e =>{
     e.preventDefault();
-    if (filterForFilm == false) {
-      filterForFilm = true;
-      filmFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-      filterForAll = false;
-      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+    if (filterForAlbums == false) {
+      filterForAlbums = true;
+      albumFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+      filterChoice = 'album';
+      for (let element = 0; element < filterElements.length; element++) {
+        let currentElement = filterElements[element];
+        if (currentElement != albumFilter) {
+          currentElement.style = 'text-decoration-line: none; text-decoration-style: none;';
+        }
+      }
+      alertFilterMsg.style.display = 'none';
     }
-    else if (filterForFilm == true) {
-      filterForFilm = false;
-      filmFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
-    }
-  });
-  const locationFilter = document.querySelector('#searchForLocation');
-  var filterForLocation = false;
-  locationFilter.addEventListener('click', async e =>{
-    e.preventDefault();
-    if (filterForLocation == false) {
-      filterForLocation = true;
-      locationFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-      filterForAll = false;
-      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
-    }
-    else if (filterForLocation == true) {
-      filterForLocation = false;
-      locationFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
-    }
-  });
-  const otherFilter = document.querySelector('#searchForOther');
-  var filterForOther = false;
-  otherFilter.addEventListener('click', async e =>{
-    e.preventDefault();
-    if (filterForOther == false) {
-      filterForOther = true;
-      otherFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-      filterForAll = false;
-      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
-    }
-    else if (filterForOther == true) {
-      filterForOther = false;
-      otherFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
-    }
-  });
-  const allFilter = document.querySelector('#searchForAll');
-  var filterForAll = true;
-  allFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-  allFilter.addEventListener('click', async e =>{
-    e.preventDefault();
-    if (filterForAll == false) {
-      filterForAll = true;
-      allFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
-
-      filterForUser = false;
-      userFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
-      filterForMusic = false;
-      musicFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
-      filterForFilm = false;
-      filmFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
-      filterForLocation = false;
-      locationFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
-      filterForOther = false;
-      otherFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
-    }
-    else if (filterForAll == true) {
-      filterForAll = false;
-      allFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+    else if (filterForAlbums == true) {
+      filterForAlbums = false;
+      albumFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+      filterChoice = null;
+      alertFilterMsg.style.display = 'block';
     }
   });
   
+  
+  var filterForSongs = false;
+  songFilter.addEventListener('click', async e =>{
+    e.preventDefault();
+    if (filterForSongs == false) {
+      filterForSongs = true;
+      songFilter.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+      filterChoice = 'song';
+      for (let element = 0; element < filterElements.length; element++) {
+        let currentElement = filterElements[element];
+        if (currentElement != songFilter) {
+          currentElement.style = 'text-decoration-line: none; text-decoration-style: none;';
+        }
+      }
+      alertFilterMsg.style.display = 'none';
+    }
+    else if (filterForSongs == true) {
+      filterForSongs = false;
+      songFilter.style = 'text-decoration-line: none; text-decoration-style: none;';
+      filterChoice = null;
+      alertFilterMsg.style.display = 'block';
+    }
+  });
+
+  var alertFilterMsg = document.querySelector('#noFilterAlert');
   //submit search listener:
   const searchForm = document.querySelector("#searchBarContainer2");
   searchForm.addEventListener('submit', async e =>{
     const searchbar = document.querySelector('#searchBar2');
     const userInput = searchbar.value;
     e.preventDefault();
-    displaySearchResults(userInput, filterForUser, filterForMusic, filterForFilm, filterForLocation, filterForOther, filterForAll);
+    if (filterChoice == null) {
+      alertFilterMsg.style.display = 'block';
+    }
+    else {
+      displaySearchResults(userInput, filterChoice);
+    }
   });
 }
 
-async function displaySearchResults(input, filterForUser, filterForMusic, filterForFilm, filterForLocation, filterForOther, filterForAll) {
+async function displaySearchResults(input, filterChoice) {
   const searchResultsSection = document.querySelector("#searchResults2");
   var resultString = "<div id = 'resultTitle'>Results:</div>";
-  //------------------------------------
-  //query for objects:
-  const q = query(collection(db,"objects"), where("tags", "array-contains", input));
-  const querySnapshot = await getDocs(q);
   var matchingResults = [];
   var matchingIds = [];
-  querySnapshot.forEach((doc) => {
-    // doc.data() is never undefined for query doc snapshots
-    //console.log(doc.id, " => ", doc.data());
-    matchingResults.push(doc.data());
-    matchingIds.push(doc.id);
-  });
+  //------------------------------------
+  //query for objects:
+  console.log(filterChoice);
+  if (filterChoice != 'users') {
+    const q = query(collection(db,"objects"), where("tags", "array-contains", input), where("type", "==", filterChoice), limit(20));
+    //const q = query(collection(db,"objects"), where("tags", "array-contains", input), where("type", "==", filterChoice), orderBy("averageRanks"), limit(20));
+    const querySnapshot = await getDocs(q);
 
+    querySnapshot.forEach((doc) => {
+      // doc.data() is never undefined for query doc snapshots
+      //console.log(doc.id, " => ", doc.data());
+      matchingResults.push(doc.data());
+      matchingIds.push(doc.id);
+    });
+    console.log(matchingResults);
+  }
+else if (filterChoice == 'users') {
   const userQuery = query(collection(db,"users"), where("email", "==", input));
   const userSnapshot = await getDocs(userQuery);
   var userResults = [];
@@ -377,101 +389,43 @@ async function displaySearchResults(input, filterForUser, filterForMusic, filter
   userSnapshot.forEach((doc) => {
     // doc.data() is never undefined for query doc snapshots
     //console.log(doc.id, " => ", doc.data());
-    userResults.push(doc.data());
-    userIds.push(doc.id);
+    matchingResults.push(doc.data());
+    matchingIds.push(doc.id);
   });
+}
+  //------------------------------------
 
-  let filteredResults = [];
-  let filteredIds = [];
-  //------------------------------------
-  //query for users:
-  if (filterForUser == true) {
-    for (let i =0; i<userResults.length; i++) {
-      filteredResults.push(userResults[i]);
-      filteredIds.push(userIds[i]);
-    }
-  }
-  //------------------------------------
-  //query for music:
-  if (filterForMusic == true) {
-    for (let i =0; i<matchingResults.length; i++) {
-      let objectClass = matchingResults[i].class;
-      if (objectClass == "music") {
-        filteredResults.push(matchingResults[i]);
-        filteredIds.push(matchingIds[i]);
-      }
-    }
-  }
-  //------------------------------------
-  //query for Film:
-  if (filterForFilm == true) {
-    for (let i =0; i<matchingResults.length; i++) {
-      let objectClass = matchingResults[i].class;
-      if (objectClass == "film") {
-        filteredResults.push(matchingResults[i]);
-        filteredIds.push(matchingIds[i]);
-      }
-    }
-  }
-  //------------------------------------
-  //query for location:
-  if (filterForLocation == true) {
-    for (let i =0; i<matchingResults.length; i++) {
-      let objectClass = matchingResults[i].class;
-      if (objectClass == "location") {
-        filteredResults.push(matchingResults[i]);
-        filteredIds.push(matchingIds[i]);
-      }
-    }
-  }
-  //------------------------------------
-  //query for other:
-  if (filterForOther == true) {
-    for (let i =0; i<matchingResults.length; i++) {
-      let objectClass = matchingResults[i].class;
-      if (objectClass == "other") {
-        filteredResults.push(matchingResults[i]);
-        filteredIds.push(matchingIds[i]);
-      }
-    }
-  }
-  //------------------------------------ 
-  if (filterForAll == true) {
-    filteredResults = userResults;
-    filteredIds = userIds;
-    for (let i = 0; i<matchingResults.length; i++) {
-      filteredResults.push(matchingResults[i]);
-      filteredIds.push(matchingIds[i]);
-    }
 
-  }
   resultString += "<div id='searchResultContainer'>";
 
-  for (let i =0; i<filteredResults.length; i++) {
-    if (filteredResults[i].class == "user") {
-      resultString += "<div id='result"+filteredIds[i]+"' class = 'searchResult'>";
+  for (let i =0; i<matchingResults.length; i++) {
+    if (matchingResults[i].class == "user") {
+      resultString += "<div id='result"+matchingIds[i]+"' class = 'searchResult'>";
       
         resultString += "<div class='objectLabel'>Reputation:</div><div class='objectLabel'>Username:</div><div class='objectLabel'>Posts:</div>";
-        let currentRep = filteredResults[i].reputation;
+        let currentRep = matchingResults[i].reputation;
         
         resultString += "<div class='averageRank'>"+currentRep+"</div>";
-        let fixedId = fixUserEmail(filteredIds[i]);
-        resultString += "<div class='titleValue'><a id='object"+fixedId+"' href='#'>"+filteredResults[i].userName+"</a></div>";
-        resultString += "<div><strong>"+filteredResults[i].postCount+"</strong></div>";
+        let fixedId = fixUserEmail(matchingIds[i]);
+        resultString += "<div class='titleValue'><a id='object"+fixedId+"' href='#'>"+matchingResults[i].userName+"</a></div>";
+        resultString += "<div><strong>"+matchingResults[i].postCount+"</strong></div>";
 
       resultString += "</div>";
     }
     else {
-      resultString += "<div id='result"+filteredIds[i]+"' class = 'searchResult'>";
+      resultString += "<div id='result"+matchingIds[i]+"' class = 'searchResult'>";
       
         resultString += "<div class='objectLabel'>Average Rank:</div><div class='objectLabel'>Title:</div><div class='objectLabel'>Posts:</div>";
-        let currentAv = filteredResults[i].averageRanks;
+        let currentAv = matchingResults[i].averageRanks;
         if (currentAv != 0) {
           currentAv = currentAv.toFixed(1);
         }
+        if (isNaN(currentAv)) {
+          currentAv = 0;
+        }
         resultString += "<div class='averageRank'>"+currentAv+"</div>";
-        resultString += "<div class='titleValue'><a id='object"+filteredIds[i]+"' href='#'>"+filteredResults[i].name+"</a></div>";
-        resultString += "<div><strong>"+filteredResults[i].postCount+"</strong></div>";
+        resultString += "<div class='titleValue'><a id='object"+matchingIds[i]+"' href='#'>"+matchingResults[i].name+"</a></div>";
+        resultString += "<div><strong>"+matchingResults[i].postCount+"</strong></div>";
 
       resultString += "</div>";
     }
@@ -479,23 +433,23 @@ async function displaySearchResults(input, filterForUser, filterForMusic, filter
   }
   resultString += "</div>";
   searchResultsSection.innerHTML = resultString;
-  addListenersForSearchResults(filteredResults, filteredIds);
+  addListenersForSearchResults(matchingResults, matchingIds);
 }
-async function addListenersForSearchResults(filteredResults, filteredIds) {
-  for (let i =0; i<filteredResults.length; i++) {
-    if (filteredResults[i].class == "user") {
-      let fixedId = fixUserEmail(filteredIds[i]);
+async function addListenersForSearchResults(matchingResults, matchingIds) {
+  for (let i =0; i<matchingResults.length; i++) {
+    if (matchingResults[i].class == "user") {
+      let fixedId = fixUserEmail(matchingIds[i]);
       const userNameLinkRef = document.querySelector('#object'+fixedId);
       userNameLinkRef.addEventListener('click', async e =>{
         e.preventDefault();
-      displayProfileSection(filteredIds[i]);
+      displayProfileSection(matchingIds[i]);
       });
     }
     else {
-      const objectLinkRef = document.querySelector('#object'+filteredIds[i]);
+      const objectLinkRef = document.querySelector('#object'+matchingIds[i]);
       objectLinkRef.addEventListener('click', async e =>{
         e.preventDefault();
-        displayObjectPopup(filteredIds[i]);
+        displayObjectPopup(matchingIds[i]);
       });
     }
   }
@@ -520,50 +474,59 @@ homeBtn.addEventListener('click', async e => {
 //post section:
 rankBtn.addEventListener('click', async e => {
   e.preventDefault();
+  var blank = '';
+  displayPostSection(false, blank);
+})
+async function displayPostSection(isSpecific, specificId) {
   if (signedIn==false) {
     alert("Please sign in with google.");
   }
   else {
     displaySection("rank");
-    const postSearchBarForm = document.querySelector("#searchBarContainer");
-    const searchResults = document.querySelector("#searchResults");
-    const searchBarInput = document.querySelector("#searchBar");
-    postSearchBarForm.addEventListener('submit', async e =>{
-      e.preventDefault();
-      var searchInputValue = searchBarInput.value;
-      const postForm = document.querySelector("#postForm");
-      if (searchInputValue == "") {
-        postForm.innerHTML = "&#8592; Find something to rank using the search bar on the left.";
-        searchResults.innerHTML = "";
-      }
-      else{
-        const q = query(collection(db,"objects"), where("tags", "array-contains", searchInputValue));
-        const querySnapshot = await getDocs(q);
-        var matchingResults = [];
-        var matchingIds = [];
-        querySnapshot.forEach((doc) => {
-          // doc.data() is never undefined for query doc snapshots
-          //console.log(doc.id, " => ", doc.data());
-          matchingResults.push(doc.data());
-          matchingIds.push(doc.id);
-        });
-        //console.log(matchingResults);
-        let resultsList = "";
-        for (let i=0; i < matchingResults.length; i++) {
-          resultsList += "<div><button id = '"+matchingIds[i]+"' class = 'resultObject'><strong>";
-          resultsList += matchingResults[i].name + "</strong>";
-
-          //resultsList += "</br>"+matchingResults[i].creator;
-          resultsList += "</button></div>";
+    if (isSpecific == true) {
+        updatePostForm(specificId);
+    }
+    else{
+      const postSearchBarForm = document.querySelector("#searchBarContainer");
+      const searchResults = document.querySelector("#searchResults");
+      const searchBarInput = document.querySelector("#searchBar");
+      postSearchBarForm.addEventListener('submit', async e =>{
+        e.preventDefault();
+        var searchInputValue = searchBarInput.value;
+        const postForm = document.querySelector("#postForm");
+        if (searchInputValue == "") {
+          postForm.innerHTML = "&#8592; Find something to rank using the search bar on the left.";
+          searchResults.innerHTML = "";
         }
-        searchResults.innerHTML = resultsList;
-        addListenersPost(matchingIds);
-      }
-      
-    })
-  }
+        else{
+          const q = query(collection(db,"objects"), where("tags", "array-contains", searchInputValue));
+          const querySnapshot = await getDocs(q);
+          var matchingResults = [];
+          var matchingIds = [];
+          querySnapshot.forEach((doc) => {
+            // doc.data() is never undefined for query doc snapshots
+            //console.log(doc.id, " => ", doc.data());
+            matchingResults.push(doc.data());
+            matchingIds.push(doc.id);
+          });
+          //console.log(matchingResults);
+          let resultsList = "";
+          for (let i=0; i < matchingResults.length; i++) {
+            resultsList += "<div><button id = '"+matchingIds[i]+"' class = 'resultObject'><strong>";
+            resultsList += matchingResults[i].name + "</strong>";
   
-})
+            //resultsList += "</br>"+matchingResults[i].creator;
+            resultsList += "</button></div>";
+          }
+          searchResults.innerHTML = resultsList;
+          addListenersPost(matchingIds);
+        }
+        
+      })
+    }
+    
+  }
+}
 
 async function addListenersPost(matchingIds) {
   for (let i=0; i < matchingIds.length; i++) {
@@ -589,7 +552,7 @@ async function updatePostForm(objectId){
   const name = objectRef.data().name;
   var postFormString = "<div> <strong>"+name;
       postFormString += "</strong>";
-      if ((type == "Song") || (type == "Book") || (type == "Film")) {
+      if ((type == "song") || (type == "album") || (type == "Book") || (type == "Film")) {
         const creator = objectRef.data().creator;
         postFormString += " by " + creator;
       }
@@ -606,6 +569,33 @@ async function updatePostForm(objectId){
       postFormString += "</br><button id='publish"+objectId+"' class='publishPostButton' type='submit'>Publish</button></br>";
       postForm.innerHTML = postFormString;
       handlePostInput(name, type, objectId);
+}
+
+function getCurrentDateTime () {
+  let currentDate = new Date();
+  let cDay = currentDate.getDate();
+  let cMonth = currentDate.getMonth() + 1;
+  let cYear = currentDate.getFullYear();
+  let chour = currentDate.getHours();
+  let amOrPm;
+  if ((chour > 12)&&(chour != 24)) {
+    amOrPm = 'PM';
+    chour = chour-12;
+  }
+  else if (chour == 24) {
+    amOrPm = 'AM';
+    chour = 12;
+  }
+  else if (chour < 12) {
+    amOrPm = 'AM'
+  }
+  else if (chour == 12) {
+    amOrPm = 'PM';
+  }
+  let time = chour + ":" + currentDate.getMinutes() +" "+amOrPm;
+  let dateString = cMonth +"/"+cDay+"/"+cYear+" at "+ time;
+  let finalString = String(dateString)
+  return finalString;
 }
 
 async function handlePostInput(name, type, objectId) {
@@ -637,12 +627,12 @@ async function handlePostInput(name, type, objectId) {
         alert("You have already made a post for " + name);
       }
       else {
-        var userPost
-        if ((type == "Song") || (type == "Book") || (type == "Film")) {
+        var userPost;
+        if ((type == "song") ||(type == "album") || (type == "Book") || (type == "Film")) {
           var userText = textArea.value;
           var objectCreator = docSnap.creator;
-          var genre = docSnap.genre;
-          userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, name, type, genre);
+          let dateString = String(getCurrentDateTime());
+          userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, name, type, dateString);
           var upVotesArray = [];
           var downVotesArray = [];
           //console.log(userPost.text);
@@ -656,7 +646,7 @@ async function handlePostInput(name, type, objectId) {
             objectName: userPost.objectName,
             objectCreator: objectCreator,
             type: userPost.objectType,
-            genre: genre,
+            datePublished: dateString,
             upvotes: userPost.upvotes,
             downvotes: userPost.downvotes,
             objectId: objectId,
@@ -673,7 +663,8 @@ async function handlePostInput(name, type, objectId) {
         }
         else if ((type == "artist") || (type == "Author") || (type == "Actor")) {
           var userText = textArea.value;
-          userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, name, type);
+          let dateString = String(getCurrentDateTime());
+          userPost = new Post(currentUser.userEmail, currentUser.userName, sliderValue, userText, name, type,dateString);
           //console.log(userPost.text);
           alert("You have successfully published your post about: " + name);
           var upVotesArray = [];
@@ -687,6 +678,7 @@ async function handlePostInput(name, type, objectId) {
             text: userPost.text,
             objectName: userPost.objectName,
             type: userPost.objectType,
+            datePublished: dateString,
             upvotes: userPost.upvotes,
             downvotes: userPost.downvotes,
             objectId: objectId,
@@ -888,19 +880,23 @@ async function displayProfilePosts(userId) {
       let postRef = doc(db, "posts", currentId);
       let docSnap = await getDoc(postRef);
       if (docSnap.exists()) {
-        
+        let objectId = docSnap.data().objectId;
+        let objectRef = doc(db, "objects", objectId);
+        let objectSnap = await getDoc(objectRef);
         profilePostsString += "<div id='"+currentId+"' class = 'aPost'>";
         profilePostsString += "<div id='Rank"+currentId+"' class='displayRank'><div id = 'rankPostLabel"+currentId+"' class='profilePostLabel'>";
-        profilePostsString += "Rank:</div><div class='rankValue'>"+docSnap.data().rank+"</div></div>";
+        profilePostsString += "<div class='rankValue'>Rank:&nbsp;"+docSnap.data().rank+"</div></div><div class='objectImg'><img class='objectImg2' src='"+objectSnap.data().imgUrl+"'></div></div>";
         profilePostsString += "<div id = 'postContent'>";
         const objectType = docSnap.data().type;
-        if ((objectType == "Song") || (objectType == "Film") || (objectType == "Book")) {
-          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
+        var displaytype = objectType.charAt(0).toUpperCase();
+        displaytype += objectType.substring(1,objectType.length);
+        if ((objectType == "song") || (objectType == "album") || (objectType == "Film") || (objectType == "Book")) {
+          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>"+displaytype+":</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
           profilePostsString += docSnap.data().objectName+" by "+docSnap.data().objectCreator;
           profilePostsString += "</a></div>";
         }
         else if ((objectType == "artist") || (objectType == "Author") || (objectType == "Actor")) {
-          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
+          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>"+displaytype+":</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
           profilePostsString += docSnap.data().objectName;
           profilePostsString += "</a></div>";
         }
@@ -919,8 +915,9 @@ async function displayProfilePosts(userId) {
             profilePostsString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentId+"' class='textContainer'> <div id='"+currentId+"textValue' class='textValue'>";
             profilePostsString += docSnap.data().text+"</div></div></div>";
             profilePostsString += "<div id = 'deleteBtnContainer"+currentId+"'> <button id='deletePost"+currentId+"'>Delete Post</button>";
-            profilePostsString += "<button id='editPost"+currentId+"'><img id='editIcon' src='/assets/editIcon.5de888a8.png'>Edit Post</button></div>"; 
-            profilePostsString += "</div>";
+            profilePostsString += "<button id='editPost"+currentId+"'><img id='editIcon' src='/assets/editIcon.5de888a8.png'>Edit Post</button>"; 
+            profilePostsString += "<div class = 'profileLabel'>Published:</br>"+docSnap.data().datePublished+"</div>";
+            profilePostsString += "</div></div>";
         profilePostsString += "</div>";        
         
         
@@ -938,19 +935,23 @@ async function displayProfilePosts(userId) {
       let postRef = doc(db, "posts", currentId);
       let docSnap = await getDoc(postRef);
       if (docSnap.exists()) {
-        
+        let objectId = docSnap.data().objectId;
+        let objectRef = doc(db, "objects", objectId);
+        let objectSnap = await getDoc(objectRef);
         profilePostsString += "<div id='"+currentId+"' class = 'aPost'>";
         profilePostsString += "<div id='Rank"+currentId+"' class='displayRank'><div id = 'rankPostLabel"+currentId+"' class='profilePostLabel'>";
-        profilePostsString += "Rank:</div><div class='rankValue'>"+docSnap.data().rank+"</div></div>";
+        profilePostsString += "<div class='rankValue'>Rank:&nbsp;"+docSnap.data().rank+"</div></div><div class='objectImg'><img class='objectImg2' src='"+objectSnap.data().imgUrl+"'></div></div>";
         profilePostsString += "<div id = 'postContent'>";
         const objectType = docSnap.data().type;
-        if ((objectType == "Song") || (objectType == "Film") || (objectType == "Book")) {
-          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
+        var displaytype = objectType.charAt(0).toUpperCase();
+        displaytype += objectType.substring(1,objectType.length);
+        if ((objectType == "song") ||(objectType == "album") || (objectType == "Film") || (objectType == "Book")) {
+          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>"+displaytype+":</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
           profilePostsString += docSnap.data().objectName+" by "+docSnap.data().objectCreator;
           profilePostsString += "</a></div>";
         }
         else if ((objectType == "Band") ||(objectType == "artist") || (objectType == "Author") || (objectType == "Actor")) {
-          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>Title:</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
+          profilePostsString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentId+"' class='profilePostLabel'>"+displaytype+":</div><a href='#' id='titleValue"+docSnap.data().objectId+"' class='titleValue'>";
           profilePostsString += docSnap.data().objectName;
           profilePostsString += "</a></div>";
         }
@@ -969,8 +970,9 @@ async function displayProfilePosts(userId) {
           profilePostsString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentId+"' class='textContainer'> <div id='"+currentId+"textValue' class='textValue'>";
           profilePostsString += docSnap.data().text+"</div></div></div>";
           profilePostsString += "<div id = 'deleteBtnContainer"+currentId+"'> <button id='comments"+currentId+"'>Comments</button>";
-          profilePostsString += "<button id='editPost"+currentId+"'>Blank button</button></div>"; 
-          profilePostsString += "</div>";
+          profilePostsString += "<button id='editPost"+currentId+"'>Blank button</button>"; 
+          profilePostsString += "<div class = 'profileLabel'>Published:</br>"+docSnap.data().datePublished+"</div>";
+          profilePostsString += "</div></div>";
         profilePostsString += "</div>";        
         
         
@@ -1313,42 +1315,73 @@ async function displayObjectPopup(objectId) {
   const bottomDisplay = document.querySelector("#objectPopupBottom");
   const type = docSnap.data().type;
   var topString;
+  if (isNaN(averageRank)) {
+    averageRank = 0;
+  }
   topString = "<div id='leftObjectContent'><div class='objectLabel'>Average Rank:</div>";
   topString += "<div class='averageRank'>"+averageRank+"</div>";
   topString += "</div>";
-  topString += "<div id='rightObjectContent'><div class='objectLabel'>Title:</div>";
-  if ((type == "Song") || (type == "Film") || (type == "Book")) {
-    topString += "<div class='objectLabel'>Release Date:</div>";
+  topString += "<div id='rightObjectContent'>";
+  topString += "<div></div>";
+  var displaytype = type.charAt(0).toUpperCase();
+  displaytype += type.substring(1,type.length);
+  topString += "<div class='objectLabel'>"+displaytype+":</div>";
+  if ((type == "song") || (type == "album") || (type == "Film") || (type == "Book")) {
+    topString += "<div class='objectLabel'><strong><a href='"+docSnap.data().spotifyLink+"' target='_blank'>Listen on Spotify</a></strong></div>";
   }
   else if ((type == "artist")) {
     topString += "<div class='objectLabel'><strong><a href='"+docSnap.data().spotifyLink+"' target='_blank'>Listen on Spotify</a></strong></div>";
   }
- 
+  topString += "<div><img class='objectImg3' src='"+docSnap.data().imgUrl+"'></div>";
   topString += "<div class='titleValue'><strong>"+docSnap.data().name+"</strong>";
  
-  if ((type == "Song") || (type == "Film") || (type == "Book")) {
-    const q = query(collection(db,"objects"), where("name", "==", docSnap.data().creator));
+  if ((type == "song") || (type == "album") || (type == "Film") || (type == "Book")) {
+    const q = query(collection(db,"objects"), where("name", "==", docSnap.data().creator), where("type", "==", 'artist') );
     const querySnapshot = await getDocs(q);
+    var addString = "";
     querySnapshot.forEach((doc) => {
-      // doc.data() is never undefined for query doc snapshots
-      //console.log(doc.id, " => ", doc.data());
-      objectLinkIds.push("#creator"+doc.id);
-      objectIds.push(doc.id);
-      topString += "</br>&nbsp;&nbsp;&nbsp;<a id='creator"+doc.id+"' href='#'>"+docSnap.data().creator+"</a>";
+      if (type == 'song') {
+        var currentArtistSongs = doc.data().trackIds;
+        if (currentArtistSongs.includes(docSnap.id)){
+          // doc.data() is never undefined for query doc snapshots
+          //console.log(doc.id, " => ", doc.data());
+          objectLinkIds.push("#creator"+doc.id);
+          objectIds.push(doc.id);
+          addString = "</br>&nbsp;&nbsp;&nbsp;<a id='creator"+doc.id+"' href='#'>"+docSnap.data().creator+"</a>";
+        }
+      }
+      else if (type == 'album') {
+        var currentArtistAlbums = doc.data().albumIds;
+        if (currentArtistAlbums.includes(docSnap.id)){
+          // doc.data() is never undefined for query doc snapshots
+          //console.log(doc.id, " => ", doc.data());
+          objectLinkIds.push("#creator"+doc.id);
+          objectIds.push(doc.id);
+          addString = "</br>&nbsp;&nbsp;&nbsp;<a id='creator"+doc.id+"' href='#'>"+docSnap.data().creator+"</a>";
+        }
+      }
     });
+    topString += addString;
   }
   else if ((type == "Band") || (type == "artist") || (type == "Author") || (type == "Actor")) {
     topString += "&nbsp;&nbsp;&nbsp;<a href='#'></a>";
   }
+  
   topString += "</div>";
-  if ((type == "Song") || (type == "Film") || (type == "Book")) {
-    topString += "<div><strong>"+docSnap.data().releaseDate+"</strong></br>";
+  if ((type == "song") || (type == "album") || (type == "Film") || (type == "Book")) {
+    topString += "<div class='objectLabel'><button id='rankIt"+objectId+"'>";
+    topString += "<img id='editIcon' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/editIcon.png'></img>";
+    topString += "Rank it</button>&nbsp;&nbsp;";
   }
   else if ((type == "Band")) {
-    topString += "<div><strong>"+docSnap.data().established+"</strong></br>";
+    topString += "<div class='objectLabel'><button id='rankIt"+objectId+"'>";
+    topString += "<img id='editIcon' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/editIcon.png'></img>";
+    topString += "Rank it</button>&nbsp;&nbsp;";
   }
   else if ( (type == "artist")) {
-    topString += "<div class='objectLabel' >Spotify Followers:</br>"+docSnap.data().spotifyFollowers+"</br>";
+    topString += "<div class='objectLabel'><button id='rankIt"+objectId+"'>";
+    topString += "<img id='editIcon' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/editIcon.png'></img>";
+    topString += "Rank it</button>&nbsp;&nbsp;";
   }
  
  
@@ -1378,16 +1411,25 @@ async function displayObjectPopup(objectId) {
     publisherIds.push(postSnap.data().publisher);
     bottomString += "<div id ='objectPost"+currentPostId+"' class='aPost'>";
       
+    let objectImgUrl = docSnap.data().imgUrl;
+    let objectType = docSnap.data().type;
+    
 
         bottomString += "<div class='displayRank'>";
-          bottomString += "<div class='profilePostLabel'>Rank:</div>";
-          bottomString += "<div class='rankValue'>"+postSnap.data().rank+"</div>";
+          bottomString += "<div class='profilePostLabel'>";
+          bottomString += "<div class='rankValue'>Rank:&nbsp;"+postSnap.data().rank+"</div></div>";
+          bottomString += "<div class='objectImg'><img class='objectImg2' src='"+objectImgUrl+"'></div>";
         bottomString += "</div>";
 
         bottomString += "<div id='postContent'>";
 
-            bottomString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentPostId+"' class='profilePostLabel'>Title:</div><div class='titleValue'>";
-            bottomString += "<strong>"+postSnap.data().objectName+"</strong> by "+postSnap.data().objectCreator;
+            bottomString += "<div id = 'leftPostContent'><div id = 'titlePostLabel"+currentPostId+"' class='profilePostLabel'>"+displaytype+":</div><div class='titleValue'>";
+            if (objectType == 'artist') {
+              bottomString += "<strong>"+postSnap.data().objectName+"</strong>";
+            }
+            else {
+              bottomString += "<strong>"+postSnap.data().objectName+"</strong> by "+postSnap.data().objectCreator;
+            }
             bottomString += "</div></div>";
             let upvotes = postSnap.data().upvotes;
             let downvotes = postSnap.data().downvotes;
@@ -1397,7 +1439,9 @@ async function displayObjectPopup(objectId) {
             bottomString += "<button class='voteArrowBtn' id = 'upVoteBtn"+currentPostId+"'> <img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIcon.png'> </button>";
             bottomString += "<button class='voteArrowBtn' id = 'downVoteBtn"+currentPostId+"'> <img class='voteArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIcon.png'> </button>";
             bottomString += "</div>"
-            bottomString += "<div id='voteValue"+currentPostId+"'>"+votes+"</div></div></div>";
+            bottomString += "<div id='voteValue"+currentPostId+"'>"+votes+"</div></div>";
+            bottomString += "<div class = 'profileLabel'>Published:</br>"+postSnap.data().datePublished+"</div>";
+            bottomString += "</div>";
             bottomString += "<div id = 'leftPostContent'><div id = 'textPostLabel"+currentPostId+"' class='profilePostLabel'>Text:</div> <div id='textContainer"+currentPostId+"' class='textContainer'> <div id='"+currentPostId+"textValue' class='textValue'>";
             bottomString += postSnap.data().text+"</div></div></div>";
             bottomString += "</div>";
@@ -1406,16 +1450,22 @@ async function displayObjectPopup(objectId) {
   }
   bottomString += "</div>";
   bottomDisplay.innerHTML = bottomString;
-  addListenersForObjectPage(objectLinkIds, objectIds, publisherLinkIds, publisherIds, postIds);
+  addListenersForObjectPage(objectLinkIds, objectIds, publisherLinkIds, publisherIds, postIds,objectId);
 }
 
-async function addListenersForObjectPage(objectLinkIds, objectIds, publisherLinkIds, publisherIds, postIds) {
+async function addListenersForObjectPage(objectLinkIds, objectIds, publisherLinkIds, publisherIds, postIds,rankItId) {
   for (let i=0; i<objectLinkIds.length; i++) {
     addListenersForObjectPage2(objectIds[i], objectLinkIds[i]);
   }
   for (let i=0; i<publisherLinkIds.length; i++) {
     addListenersForObjectPage3(publisherIds[i], publisherLinkIds[i]);
   }
+  // handle rank it button --------------------------------------------------------------------------------------
+  var rankItRef = document.querySelector('#rankIt'+rankItId);
+  rankItRef.addEventListener('click', async e => {
+    e.preventDefault();
+    displayPostSection(true, rankItId);
+  })
   // handle voteButton press  --------------------------------------------------------------------------------------
   for (let i = 0; i<postIds.length; i++) {
     var currentId = postIds[i];
