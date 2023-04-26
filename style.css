@@ -23,6 +23,40 @@ body {
   display: block;
 }
 
+.homeBody{
+  width: 85%;
+  display: grid;
+  grid-template-columns: 100%;
+}
+.aFeed{
+  display: grid;
+  border-radius: 0px 10px 10px 10px;
+  margin-bottom: 1%;
+}
+.leftFeedPost{
+  display: grid;
+  grid-template-rows: 9% 90%;
+}
+.feedPostContent{
+  display:grid;
+  grid-template-columns: 30% 70%;
+  background-color: #ffffff;
+  border-radius: 0px 10px 10px 10px;
+  height: max-content;
+}
+.rightFeedContent{
+  display: grid;
+  grid-template-rows: 13% 30% 57%;
+}
+.rightFeedLabels{
+  display: grid;
+  grid-template-columns: 40% 40% 20%;
+  grid-template-rows: max-content;
+}
+.rightFeedTitles{
+  display: grid;
+  grid-template-columns: 80% 20%;
+}
 #userNamePopUp{
   display: none;
   width: fit-content;
