@@ -476,8 +476,11 @@ homeBtn.addEventListener('click', async e => {
     displayHomeFeed();
   }
 })
+const loadingGif = "<img class='loadingGif' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/Loading_Gif.gif'>";
 
 async function displayHomeFeed() {
+  const homeBody = document.querySelector('.homeBody');
+  homeBody.innerHTML = loadingGif;
   const userRef = await getDoc(doc(db, "users", currentUser.userEmail));
   var followingUsers = userRef.data().following;
   var allFeedPostIds = [];
@@ -563,7 +566,6 @@ async function displayHomeFeed() {
   //console.log(postIdDict);
   postIdDict.sort((d1,d2)=> d1.date - d2.date);
   //console.log(postIdDict);
-  const homeBody = document.querySelector('.homeBody');
   let feedString = '';
   
   for (let i = postIdDict.length-1; i >= 0; i-- ){
