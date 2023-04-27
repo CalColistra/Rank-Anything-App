@@ -93,8 +93,6 @@ async function checkAccount(email, name){
 if (docSnap.exists()) {
   console.log("Returning User:", docSnap.data());
   currentUser = new User(email,docSnap.data().userName, docSnap.data().followers, docSnap.data().following, docSnap.data().reputation, docSnap.data().postCount, docSnap.data().postIds);
-  displaySection("home");
-  displayHomeFeed();
 } else {
     // doc.data() will be undefined in this case
     console.log("New user!");
@@ -112,7 +110,6 @@ if (docSnap.exists()) {
   }
   displayUser.innerHTML = 'Signed in as: ' + currentUser.userName;
   displaySection("home");
-  displayHomeFeed();
 }
 
 
@@ -162,9 +159,11 @@ async function displaySection(id) {
     }
     var htmlString;
     if (id == "home") {
-      htmlString = "<div class='jumbotron text-center' style='margin-bottom:0'><h1>Home Page</h1></div>";
+      htmlString = "<div class='jumbotron text-center' style='margin-bottom:0'><h1>Your Feed</h1>";
+      htmlString += "</div>";
       htmlString += "<div class = 'homeBody'></div>";
       currentSection.innerHTML = htmlString;
+      displayHomeFeed();
     }
     else if (id == "discover") {
       htmlString = "<div class='jumbotron text-center' style='margin-bottom:0'> <h1>Explore</h1></div>";
@@ -473,10 +472,9 @@ homeBtn.addEventListener('click', async e => {
   }
   else {
     displaySection("home");
-    displayHomeFeed();
   }
 })
-const loadingGif = "<img class='loadingGif' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/Loading_Gif.gif'>";
+const loadingGif = "<img class='loadingGif' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/loadingGif.gif'>";
 
 async function displayHomeFeed() {
   const homeBody = document.querySelector('.homeBody');
@@ -501,9 +499,7 @@ async function displayHomeFeed() {
     let currentPostRef = await getDoc(doc(db, "posts", allFeedPostIds[i]));
     let currentPostDate = currentPostRef.data().datePublished;
     let currentPublisher = currentPostRef.data().publisher;
-    let fixedPubId = fixUserEmail(currentPublisher);
     publisherIds.push(currentPublisher);
-    fixedPublisherIds.push(fixedPubId);
     let splitString = currentPostDate.split("/");
     let month = splitString[0];
     month = Number(month);
@@ -549,7 +545,6 @@ async function displayHomeFeed() {
       id: allFeedPostIds[j],
       date: postDates[j],
       publisherId: publisherIds[j],
-      fixedPubId: fixedPublisherIds[j]
     }
   }
   
@@ -567,6 +562,7 @@ async function displayHomeFeed() {
   postIdDict.sort((d1,d2)=> d1.date - d2.date);
   //console.log(postIdDict);
   let feedString = '';
+  feedString += "<div class='feedSortContainer'><button class='feedSortBtn'>Sort</button><button class='sortDirection'><img href=''></button></div>";
   
   for (let i = postIdDict.length-1; i >= 0; i-- ){
     let currentPostRef1 = await getDoc(doc(db, "posts", postIdDict[i].id));
@@ -576,7 +572,7 @@ async function displayHomeFeed() {
     let objectRef1 = await getDoc(doc(db, "objects", currentPostRef.objectId));
     let objectRef = objectRef1.data();
     feedString += "<div class='aFeed' id='"+postIdDict[i].id+"'>";
-      feedString += "<div class = 'displayPublisherName'><nobr><p class='profilePostLabel'  style='display: inline;'>User: </p><a href='#' id='publisher"+postIdDict[i].fixedPubId;
+      feedString += "<div class = 'displayPublisherName'><nobr><p class='profilePostLabel'  style='display: inline;'>User: </p><a href='#' id='publisher"+postIdDict[i].id;
       feedString += "'>";
       feedString += currentPostRef.publisherName+"</a>";
       feedString += "&nbsp;&nbsp;&nbsp;<p class='profilePostLabel'  style='display: inline;'>Rep: </p><p style='display:inline'>"+currentPublisherRef.reputation+"</p></nobr></div>";
@@ -620,15 +616,28 @@ async function displayHomeFeed() {
   homeBody.innerHTML = feedString;
   addFeedListeners(postIdDict);
 }
+let currentSortId = "date";
+let sortSelection = "Sort by: <button id='dateSort' class='sortSelections'>Date</button><button id='rankSort' class='sortSelections'>Rank</button>";
+sortSelection += "<button id='voteSort' class='sortSelections'>Votes</button>";
 async function addFeedListeners(postIdDict) {
   for (let i =0; i<postIdDict.length;i++) {
     //console.log(postIdDict);
-    var currentPublisherLink = document.querySelector('#publisher'+postIdDict[i].fixedPubId);
+    var currentPublisherLink = document.querySelector('#publisher'+postIdDict[i].id);
     currentPublisherLink.addEventListener('click', async e =>{
       e.preventDefault();
       displayProfileSection(postIdDict[i].publisherId);
     });
   }
+  let feedSortBtn = document.querySelector('.feedSortBtn');
+  let feedSortContainer = document.querySelector('.feedSortContainer');
+  feedSortBtn.addEventListener('click', async e =>{
+    e.preventDefault();
+    feedSortContainer.innerHTML = sortSelection;
+    let dateSort = document.querySelector("#dateSort");
+    let rankSort = document.querySelector("#rankSort");
+    let voteSort = document.querySelector("#voteSort");
+
+  });
 }
 //-----------------------------------------------------------------------------------------------------------
 //post section:
