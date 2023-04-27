@@ -166,7 +166,7 @@ async function displaySection(id) {
       displayHomeFeed();
     }
     else if (id == "discover") {
-      htmlString = "<div class='jumbotron text-center' style='margin-bottom:0'> <h1>Explore</h1></div>";
+      htmlString = loadingGif;
       currentSection.innerHTML = htmlString;
     }
     else if (id == "search") {
@@ -562,7 +562,9 @@ async function displayHomeFeed() {
   postIdDict.sort((d1,d2)=> d1.date - d2.date);
   //console.log(postIdDict);
   let feedString = '';
-  feedString += "<div class='feedSortContainer'><button class='feedSortBtn'>Sort</button><button class='sortDirection'><img href=''></button></div>";
+  let sortUpIcon = 'https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/sortUpIcon.png';
+  let sortDownIcon = 'https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/sortDownIcon.png';
+  feedString += "<div class='feedSortContainer'><button class='feedSortBtn'>Sort</button></div>";
   
   for (let i = postIdDict.length-1; i >= 0; i-- ){
     let currentPostRef1 = await getDoc(doc(db, "posts", postIdDict[i].id));
@@ -636,9 +638,24 @@ async function addFeedListeners(postIdDict) {
     let dateSort = document.querySelector("#dateSort");
     let rankSort = document.querySelector("#rankSort");
     let voteSort = document.querySelector("#voteSort");
-
+    dateSort.addEventListener('click', async e =>{
+      e.preventDefault();
+      changeSort(dateSort);
+    });
+    voteSort.addEventListener('click', async e =>{
+      e.preventDefault();
+      changeSort(voteSort);
+    });
+    rankSort.addEventListener('click', async e =>{
+      e.preventDefault();
+      changeSort(rankSort);
+    });
   });
 }
+async function changeSort(sortType) {
+
+}
+// <button class='sortDirection'><img src='"+sortUpIcon+"'></button>
 //-----------------------------------------------------------------------------------------------------------
 //post section:
 rankBtn.addEventListener('click', async e => {
