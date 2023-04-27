@@ -491,11 +491,16 @@ async function displayHomeFeed() {
     }
   }
   var postDates = [];
+  var publisherIds = [];
+  var fixedPublisherIds = [];
   //console.log(allFeedPostIds);
   for (let i = 0; i < allFeedPostIds.length; i++) {
     let currentPostRef = await getDoc(doc(db, "posts", allFeedPostIds[i]));
     let currentPostDate = currentPostRef.data().datePublished;
-    
+    let currentPublisher = currentPostRef.data().publisher;
+    let fixedPubId = fixUserEmail(currentPublisher);
+    publisherIds.push(currentPublisher);
+    fixedPublisherIds.push(fixedPubId);
     let splitString = currentPostDate.split("/");
     let month = splitString[0];
     month = Number(month);
@@ -539,7 +544,9 @@ async function displayHomeFeed() {
   for (let j =0; j<postDates.length;j++) {
     postIdDict[j] = {
       id: allFeedPostIds[j],
-      date: postDates[j]
+      date: postDates[j],
+      publisherId: publisherIds[j],
+      fixedPubId: fixedPublisherIds[j]
     }
   }
   
@@ -560,18 +567,18 @@ async function displayHomeFeed() {
   let feedString = '';
   
   for (let i = postIdDict.length-1; i >= 0; i-- ){
-    let currentPostRef = await getDoc(doc(db, "posts", postIdDict[i].id));
-    currentPostRef = currentPostRef.data();
+    let currentPostRef1 = await getDoc(doc(db, "posts", postIdDict[i].id));
+    let currentPostRef = currentPostRef1.data();
     let currentPublisherRef = await getDoc(doc(db, "users", currentPostRef.publisher));
     currentPublisherRef = currentPublisherRef.data();
     let objectRef1 = await getDoc(doc(db, "objects", currentPostRef.objectId));
     let objectRef = objectRef1.data();
     feedString += "<div class='aFeed' id='"+postIdDict[i].id+"'>";
-      feedString += "<div class = 'displayPublisherName'><nobr><p class='profilePostLabel'  style='display: inline;'>User: </p><a href='#' id='publisher"+currentPostRef.publisher;
+      feedString += "<div class = 'displayPublisherName'><nobr><p class='profilePostLabel'  style='display: inline;'>User: </p><a href='#' id='publisher"+postIdDict[i].fixedPubId;
       feedString += "'>";
       feedString += currentPostRef.publisherName+"</a>";
       feedString += "&nbsp;&nbsp;&nbsp;<p class='profilePostLabel'  style='display: inline;'>Rep: </p><p style='display:inline'>"+currentPublisherRef.reputation+"</p></nobr></div>";
-      feedString += "<div class = 'feedPostContent'> <img class='objectImg2' src = '"+objectRef.imgUrl+"' style='width:100%;'>";
+      feedString += "<div class = 'feedPostContent'> <img class='objectImg4' src = '"+objectRef.imgUrl+"' style='width:100%;'>";
         feedString += "<div class='rightFeedContent'>";
           feedString += "<div class='rightFeedLabels'>";
           if (objectRef.type == 'artist') {
@@ -589,14 +596,37 @@ async function displayHomeFeed() {
             feedString += "<div class='profilePostLabel'><strong><a href='"+objectRef.spotifyLink+"' target='_blank'>Listen on Spotify</a></strong></div>";
           }
           feedString += "</div>";//end labels
+          let upvotes = currentPostRef.upvotes;
+          let downvotes = currentPostRef.downvotes;
+          let votes = upvotes - downvotes;
           feedString += "<div class='rightFeedTitles'>"; 
             feedString += "<a href='#'' id='titleValue"+objectRef1.id+"' class='titleValue'>"+objectRef.name+"</a>";
+            feedString += "<div class='voteContainer'>";
+            feedString += "<div class='voteButtonContainer'><button class='voteArrowBtn' id='upVoteBtn"+currentPostRef1.id+"'><img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIcon.png'></button>";
+            feedString += "<button class='voteArrowBtn' id='downVoteBtn"+currentPostRef1.id+"'> <img class='voteArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIcon.png'> </button></div>";
+            feedString += "<div class='voteValue'>"+votes+"</div>";
+            feedString += "</div>";
+          feedString += "</div>";
+          feedString += "<div class='rightFeedTitles'>"; 
+            feedString += "<div class='textValue'>&nbsp;<p class='profilePostLabel'  style='display: inline;'>Text: </p> "+currentPostRef.text+"</div>";
+            feedString += "<div><button id='comment"+currentPostRef1.id+"'>Comment</button> <div class='profileLabel'>Published:<br>"+currentPostRef.datePublished+"</div></div>";
           feedString += "</div>";
         feedString += "</div>";
       feedString += "</div>";
     feedString += "</div>";
   }
   homeBody.innerHTML = feedString;
+  addFeedListeners(postIdDict);
+}
+async function addFeedListeners(postIdDict) {
+  for (let i =0; i<postIdDict.length;i++) {
+    //console.log(postIdDict);
+    var currentPublisherLink = document.querySelector('#publisher'+postIdDict[i].fixedPubId);
+    currentPublisherLink.addEventListener('click', async e =>{
+      e.preventDefault();
+      displayProfileSection(postIdDict[i].publisherId);
+    });
+  }
 }
 //-----------------------------------------------------------------------------------------------------------
 //post section:
@@ -720,7 +750,12 @@ function getCurrentDateTime () {
   else if (chour == 12) {
     amOrPm = 'PM';
   }
-  let time = chour + ":" + currentDate.getMinutes() +" "+amOrPm;
+  let minutes = currentDate.getMinutes();
+  minutes = String(minutes);
+  if (minutes.length == 1) {
+    minutes = '0'+minutes;
+  }
+  let time = chour + ":" + minutes +" "+amOrPm;
   let dateString = cMonth +"/"+cDay+"/"+cYear+" at "+ time;
   let finalString = String(dateString)
   return finalString;

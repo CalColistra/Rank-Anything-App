@@ -27,6 +27,8 @@ body {
   width: 85%;
   display: grid;
   grid-template-columns: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 .aFeed{
   display: grid;
@@ -46,7 +48,7 @@ body {
 }
 .rightFeedContent{
   display: grid;
-  grid-template-rows: 13% 30% 57%;
+  grid-template-rows: max-content max-content max-content;
 }
 .rightFeedLabels{
   display: grid;
@@ -218,6 +220,12 @@ input[type=submit]{
   width: 100%;
   max-width: 100%;
   max-height: 100%; 
+}
+.objectImg4{
+  max-height: 200px;
+  max-width: fit-content; 
+  margin-left: auto;
+  margin-right: auto;
 }
 .objectImg2{
   max-width: 100%;
