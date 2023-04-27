@@ -476,7 +476,6 @@ homeBtn.addEventListener('click', async e => {
     displayHomeFeed();
   }
 })
-
 const loadingGif = "<img class='loadingGif' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/Loading_Gif.gif'>";
 
 async function displayHomeFeed() {
