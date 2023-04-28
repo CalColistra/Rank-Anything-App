@@ -565,9 +565,14 @@ async function displayHomeFeed() {
   let sortUpIcon = 'https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/sortUpIcon.png';
   let sortDownIcon = 'https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/sortDownIcon.png';
   feedString += "<div class='feedSortContainer'><button class='feedSortBtn'>Sort</button></div>";
-  
+  var postRefs = [];
+  var postDatas = [];
+
   for (let i = postIdDict.length-1; i >= 0; i-- ){
+    let currentPostRef2 = doc(db, "posts", postIdDict[i].id);
     let currentPostRef1 = await getDoc(doc(db, "posts", postIdDict[i].id));
+    postRefs[i] = currentPostRef2;
+    postDatas[i] = currentPostRef1;
     let currentPostRef = currentPostRef1.data();
     let currentPublisherRef = await getDoc(doc(db, "users", currentPostRef.publisher));
     currentPublisherRef = currentPublisherRef.data();
@@ -604,7 +609,7 @@ async function displayHomeFeed() {
             feedString += "<div class='voteContainer'>";
             feedString += "<div class='voteButtonContainer'><button class='voteArrowBtn' id='upVoteBtn"+currentPostRef1.id+"'><img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIcon.png'></button>";
             feedString += "<button class='voteArrowBtn' id='downVoteBtn"+currentPostRef1.id+"'> <img class='voteArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIcon.png'> </button></div>";
-            feedString += "<div class='voteValue'>"+votes+"</div>";
+            feedString += "<div class='voteValue' id='voteValue"+currentPostRef1.id+"'>"+votes+"</div>";
             feedString += "</div>";
           feedString += "</div>";
           feedString += "<div class='rightFeedTitles'>"; 
@@ -614,15 +619,28 @@ async function displayHomeFeed() {
         feedString += "</div>";
       feedString += "</div>";
     feedString += "</div>";
+    console.log(currentPostRef);
   }
   homeBody.innerHTML = feedString;
-  addFeedListeners(postIdDict);
+  addFeedListeners(postIdDict,postRefs,postDatas);
 }
 let currentSortId = "date";
 let sortSelection = "Sort by: <button id='dateSort' class='sortSelections'>Date</button><button id='rankSort' class='sortSelections'>Rank</button>";
 sortSelection += "<button id='voteSort' class='sortSelections'>Votes</button>";
-async function addFeedListeners(postIdDict) {
+
+async function addFeedListeners(postIdDict,postRefs,postDatas) {
   for (let i =0; i<postIdDict.length;i++) {
+    let upVoteArray = postDatas[i].data().upVotesArray;
+    let downVoteArray = postDatas[i].data().downVotesArray;
+    let upVoteRef = document.querySelector("#upVoteBtn"+postIdDict[i].id);
+    let downVoteRef = document.querySelector("#downVoteBtn"+postIdDict[i].id);
+    if (upVoteArray.includes(currentUser.userEmail)) {
+      upVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/upArrowIconPressed.png'>";
+    }
+    else if (downVoteArray.includes(currentUser.userEmail)) {
+      downVoteRef.innerHTML="<img class='voteArrow' id='upArrow' src='https://raw.githubusercontent.com/CalColistra/Rank-Anything-App/master/img/downArrowIconPressed.png'>";
+    }
+    await addVoteListeners(upVoteRef, downVoteRef, postRefs[i], postIdDict[i].id);
     //console.log(postIdDict);
     var currentPublisherLink = document.querySelector('#publisher'+postIdDict[i].id);
     currentPublisherLink.addEventListener('click', async e =>{
