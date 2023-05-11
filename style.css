@@ -22,7 +22,25 @@ body {
   text-align: center;
   display: block;
 }
-
+.exploreContainer{
+  display: grid;
+  grid-template-columns: 50% 50%;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+.listOfUsers{
+  display: grid;
+  grid-template-rows: max-content;
+}
+.aUser{
+  background-color: white;
+  border-radius: 10px 10px 10px 10px;
+  margin-bottom: 4px;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
 .homeBody{
   width: 85%;
   display: grid;

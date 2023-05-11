@@ -171,6 +171,7 @@ async function displaySection(id) {
     else if (id == "discover") {
       htmlString = loadingGif;
       currentSection.innerHTML = htmlString;
+      displayExplorePage();
     }
     else if (id == "search") {
      htmlString = "<div class='jumbotron text-center' style='margin-bottom:0'><h1>Search</h1></div>";
@@ -254,6 +255,71 @@ async function handlePostFilterChoice (filterChoice,postFilters, filterName) {
     }
     postSectionFilter = filterName;
     filterChoice.style = "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
+  }
+}
+//-----------------------------------------------------------------------------------------------------------
+//explore section
+async function displayExplorePage () {
+  const userSnapshot = await getDocs(collection(db, "users"));
+  var users = [];
+  userSnapshot.forEach((doc) => {
+    // doc.data() is never undefined for query doc snapshots
+    console.log(doc.id, " => ", doc.data());
+    users.push(doc);
+  });
+  const q = query(collection(db,"objects"), where("type", "==", 'artist'));
+  var artists = [];
+  const artistSnapshot = await getDocs(q);
+
+  artistSnapshot.forEach((doc) => {
+      // doc.data() is never undefined for query doc snapshots
+      //console.log(doc.id, " => ", doc.data());
+      artists.push(doc);
+    });
+  var exploreSection = document.querySelector('#discover');
+  var htmlString = "<div class='exploreContainer'> </div>";
+  exploreSection.innerHTML = htmlString;
+  var exploreContainer = document.querySelector('.exploreContainer');
+  var exploreString = "<div id='leftArtist'>";
+    exploreString += "<h1>Artists</h1>";
+    for (let i =0; i<artists.length;i++) {
+      exploreString += "<div class='aUser'>";
+        exploreString += "<a href='#' id='id"+artists[i].id+"'>"+artists[i].data().name+"</a>";
+      exploreString += "</div>";
+    }
+  exploreString += "</div>";
+  exploreString += "<div id='rightUsers'>";
+    exploreString += "<h1>Users</h1>";
+    exploreString += "<div class='listOfUsers'>";
+      var fixedIds = [];
+      for (let i =0; i<users.length;i++) {
+        exploreString += "<div class='aUser'>";
+          let fixedId = fixUserEmail(users[i].id);
+          fixedIds.push(fixedId);
+          exploreString += "<a href='#' id='id"+fixedId+"'>"+users[i].data().userName+"</a>";
+          exploreString += "<div class='profilePostLabel'>Posts: "+users[i].data().postCount+"</div>";
+        exploreString += "</div>";
+      }
+      
+    exploreString += "</div>";
+  exploreString += "</div>";
+  exploreContainer.innerHTML = exploreString;
+  addListenersForExplorePage(users,fixedIds, artists);
+}
+async function addListenersForExplorePage(users,fixedIds, artists){
+  for (let i = 0; i<users.length;i++) {
+    var currentLink = document.querySelector("#id"+fixedIds[i]);
+    currentLink.addEventListener('click', async e =>{
+      e.preventDefault();
+      displayProfileSection(users[i].id);
+    });
+  }
+  for (let i = 0; i<artists.length;i++) {
+    var currentLink = document.querySelector("#id"+artists[i].id);
+    currentLink.addEventListener('click', async e =>{
+      e.preventDefault();
+      displayObjectPopup(artists[i].id);
+    });
   }
 }
 //-----------------------------------------------------------------------------------------------------------
@@ -509,8 +575,6 @@ async function addListenersForSearchResults(matchingResults, matchingIds) {
 homeSection.style.display="block";
 homeLabel.style= "text-decoration-line: underline; text-decoration-style: wavy;text-decoration-color: #fae466; border-color: #fae466";
 
-
-
 homeBtn.addEventListener('click', async e => {
   e.preventDefault();
   if (signedIn==false) {
@@ -682,7 +746,13 @@ async function displayHomeFeed(changeDirection, firstLoad, sortType, postIdDict,
       feedString += "</div>";
       //console.log(currentPostRef);
     }
-    homeBody.innerHTML = feedString;
+    if (followingUsers.length == 0) {
+      var zeroFollowingStr = "<div class='alert'>You are not following any accounts!</br>";
+      zeroFollowingStr += "Head to the explore tab to find some accounts to follow.</div>";
+      homeBody.innerHTML = zeroFollowingStr;
+    } else {
+      homeBody.innerHTML = feedString;
+    }
     let sortString = "Sorting by <button class='changeSort' id='sortType"+sortType+"'>"+sortType+"</button> ";
     sortString += "<button id='sortDirectionBtn' class='sortDirection'><img class='sortDirectionImg' src='"+sortUpIcon+"'></button>";
     let feedSortContainer = document.querySelector('.feedSortContainer');
@@ -912,7 +982,15 @@ async function displayPostSection(isSpecific, specificId) {
   else {
     displaySection("rank");
     if (isSpecific == true) {
-        updatePostForm(specificId);
+        var newId;
+        var badID = checkBadId(specificId);
+        if (badID == true) {
+          newId = fixElementId(specificId);
+        }
+        else {
+          newId = specificId;
+        }
+        updatePostForm(newId, specificId);
     }
     else{
       var noFilterAlert = document.querySelector("#noPostFilterAlert");
@@ -1175,7 +1253,8 @@ discoverBtn.addEventListener('click', () => {
   else {
     displaySection("discover");
   }
-})
+});
+
 
 //-----------------------------------------------------------------------------------------------------------
 //Profile section:
